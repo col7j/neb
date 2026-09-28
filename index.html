@@ -1,0 +1,732 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>استوديو ستوري</title>
+<style>
+/* Layout: sticky brand bar with four tabs; each tab = control column (right) + live print-true preview (left). Single dark look taken from the Story deck. */
+@font-face{font-family:'Thmanyah Sans';src:url('fonts/thmanyahsans-Light.otf') format('opentype');font-weight:300;font-display:swap}
+@font-face{font-family:'Thmanyah Sans';src:url('fonts/thmanyahsans-Regular.otf') format('opentype');font-weight:400;font-display:swap}
+@font-face{font-family:'Thmanyah Sans';src:url('fonts/thmanyahsans-Medium.otf') format('opentype');font-weight:500;font-display:swap}
+@font-face{font-family:'Thmanyah Sans';src:url('fonts/thmanyahsans-Bold.otf') format('opentype');font-weight:700;font-display:swap}
+@font-face{font-family:'Thmanyah Sans';src:url('fonts/thmanyahsans-Black.otf') format('opentype');font-weight:900;font-display:swap}
+:root{
+  --ink:#050506; --panel:#0F0F11; --panel-2:#17171A; --panel-3:#202024;
+  --line:rgba(244,240,234,.10); --line-2:rgba(244,240,234,.18);
+  --fg:#F4F0EA; --muted:#A39C92; --dim:#6F6961;
+  --gold:#E0AA60; --copper:#B8602A; --navy:#2B3A78; --cream:#F4F0EA;
+  --ok:#7FB58A; --warn:#E0AA60; --bad:#D9735B;
+  --font:'Thmanyah Sans',system-ui,-apple-system,'Segoe UI',Tahoma,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--ink);color:var(--fg)}
+body{font-family:var(--font);font-size:15px;line-height:1.5;margin:0}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* ---------- top bar ---------- */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(5,5,6,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.bar-in{display:flex;align-items:center;gap:20px;padding-block:12px;padding-inline:clamp(16px,3vw,32px);flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;flex:none}
+.brand img{height:34px}
+.brand b{font-weight:700;font-size:16px;display:block;line-height:1.1}
+.brand small{color:var(--muted);font-size:12px;font-weight:300}
+.tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px;overflow-x:auto;max-width:100%}
+.tab{border:0;background:none;padding:8px 14px;border-radius:9px;cursor:pointer;color:var(--muted);white-space:nowrap;font-weight:500;font-size:14px}
+.tab:hover{color:var(--fg)}
+.tab[aria-selected="true"]{background:var(--panel-3);color:var(--fg);box-shadow:inset 0 -2px 0 var(--gold)}
+.spacer{flex:1}
+.status{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+.status[data-s="saved"] .dot{background:var(--ok)}
+.status[data-s="saving"] .dot{background:var(--warn);animation:pulse 1s infinite}
+.status[data-s="local"] .dot{background:var(--warn)}
+.status[data-s="error"] .dot{background:var(--bad)}
+@keyframes pulse{50%{opacity:.3}}
+.btn{border:1px solid var(--line-2);background:var(--panel-2);padding:9px 16px;border-radius:10px;cursor:pointer;font-weight:500;font-size:14px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn:hover{border-color:var(--gold)}
+.btn.primary{background:var(--gold);color:#1A1208;border-color:var(--gold);font-weight:700}
+.btn.primary:hover{background:#EBBC78}
+.btn.ghost{background:none}
+.btn.sm{padding:5px 10px;font-size:12.5px;border-radius:8px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+
+/* ---------- workspace ---------- */
+main{padding-block:24px 64px;padding-inline:clamp(16px,3vw,32px)}
+.view[hidden]{display:none!important}
+.work{display:grid;grid-template-columns:minmax(300px,360px) minmax(0,1fr);gap:28px;align-items:start}
+.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 84px);max-height:calc(100vh - 110px);overflow:auto;display:flex;flex-direction:column;gap:18px;padding-inline-end:4px}
+.side::-webkit-scrollbar{width:6px}.side::-webkit-scrollbar-thumb{background:var(--panel-3);border-radius:6px}
+.canvas{min-width:0;display:flex;flex-direction:column;gap:28px}
+@media (max-width:900px){.work{grid-template-columns:minmax(0,1fr)}.side{position:static;max-height:none;overflow:visible}}
+
+.card-ui{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card-ui h3{margin:0;font-size:13px;font-weight:500;color:var(--gold);letter-spacing:.02em}
+.hint{font-size:13px;color:var(--muted);margin:0;line-height:1.6}
+.hint kbd{font-family:inherit;background:var(--panel-3);border:1px solid var(--line-2);border-radius:5px;padding:0 6px;font-size:12px;color:var(--fg)}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field label{font-size:12px;color:var(--muted)}
+.field input,.field textarea,.field select{background:var(--ink);border:1px solid var(--line-2);border-radius:9px;padding:8px 10px;font-size:14px;width:100%;min-width:0}
+.field textarea{resize:vertical;min-height:84px;line-height:1.6}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--gold);outline:none}
+.field input[dir="ltr"]{text-align:left}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.check{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+.check input{accent-color:var(--gold);width:16px;height:16px}
+
+/* repeating rows editor */
+.rows{display:flex;flex-direction:column;gap:10px}
+.rowbox{border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;gap:8px;background:var(--ink);position:relative}
+.rowbox .rm{position:absolute;top:6px;left:6px;border:0;background:none;color:var(--dim);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px;border-radius:6px}
+.rowbox .rm:hover{color:var(--bad);background:var(--panel-2)}
+.rowbox .grid{display:grid;gap:8px}
+.rowbox input,.rowbox textarea{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:13.5px;width:100%;min-width:0}
+.rowbox textarea{min-height:48px;resize:vertical}
+.rowbox input:focus,.rowbox textarea:focus{border-color:var(--gold);outline:none}
+.rowbox .rl{display:flex;flex-direction:column;gap:3px;min-width:0}.rowbox .rl span{font-size:11px;color:var(--dim)}
+.rowbox .mini{font-size:11px;color:var(--dim)}
+
+/* slide list */
+.slist{display:flex;flex-direction:column;gap:2px}
+.sitem{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:8px;cursor:pointer;font-size:14px}
+.sitem:hover{background:var(--panel-2)}
+.sitem .n{font-variant-numeric:tabular-nums;color:var(--dim);width:22px;font-size:12px}
+.sitem .l{flex:1}
+.sitem.off .l{color:var(--dim);text-decoration:line-through}
+.sitem .mod{font-size:11px;color:var(--gold)}
+.sitem input{accent-color:var(--gold)}
+
+/* preview frames */
+.frame{display:flex;flex-direction:column;gap:10px;min-width:0}
+.frame-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.frame-h .t{color:var(--fg);font-weight:500}
+.frame-h .num{font-variant-numeric:tabular-nums;color:var(--dim)}
+.chip{font-size:11.5px;padding:2px 8px;border-radius:99px;border:1px solid var(--line-2);color:var(--muted)}
+.chip.gold{border-color:rgba(224,170,96,.5);color:var(--gold)}
+.chip.bad{border-color:rgba(217,115,91,.6);color:var(--bad)}
+.stage{position:relative;width:100%;overflow:hidden;border-radius:10px;background:#000;box-shadow:0 0 0 1px var(--line),0 20px 50px -20px rgba(0,0,0,.8)}
+.stage.off{opacity:.35}
+.scaler{position:absolute;top:0;left:0;transform-origin:0 0}
+.stage.paper{background:#fff}
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:22px}
+.docstack{display:flex;flex-direction:column;gap:26px;max-width:860px;width:100%;margin-inline:auto}
+
+/* inline editing inside slides */
+.editing .ed-t{cursor:text;border-radius:4px;transition:box-shadow .15s}
+.editing .ed-t:hover{box-shadow:0 0 0 3px rgba(224,170,96,.55)}
+.editing .ed-t:focus{outline:none;box-shadow:0 0 0 3px var(--gold)}
+.editing .ed-img{cursor:pointer;transition:filter .15s}
+.editing .ed-img:hover{filter:brightness(1.15) drop-shadow(0 0 0 var(--gold));outline:4px dashed var(--gold);outline-offset:-4px}
+
+/* overlay */
+.ov{position:fixed;inset:0;background:rgba(5,5,6,.78);backdrop-filter:blur(6px);display:grid;place-items:center;z-index:50;padding:16px}
+.ov-box{background:var(--panel);border:1px solid var(--line-2);border-radius:16px;padding:24px 26px;width:min(420px,100%);display:flex;flex-direction:column;gap:14px}
+.ov-box b{font-size:17px}
+.prog{height:6px;background:var(--panel-3);border-radius:6px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--copper),var(--gold));transition:width .25s}
+.toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--panel-3);border:1px solid var(--line-2);padding:10px 18px;border-radius:10px;z-index:60;font-size:14px;max-width:calc(100% - 32px)}
+
+/* ================= DOCUMENT TEMPLATES (print-true, fixed px) ================= */
+.pg{position:relative;overflow:hidden;box-sizing:border-box;font-family:'Thmanyah Sans',sans-serif}
+.pg *{box-sizing:border-box}
+.a4{width:794px;height:1123px;background:#FBF8F3;color:#141214;direction:rtl}
+.a4 .orb{position:absolute;border-radius:50%;pointer-events:none}
+.a4 .ph{position:absolute;top:34px;right:48px;left:48px;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#6F6961}
+.a4 .ph .t{font-weight:300}
+.a4 .pf{position:absolute;bottom:28px;right:48px;left:48px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#8A837A;border-top:1px solid rgba(20,18,20,.12);padding-top:10px}
+.a4 .pf img{height:16px}
+.a4 .body{position:absolute;top:78px;right:48px;left:48px;bottom:70px;display:flex;flex-direction:column}
+.a4 .eyebrow{font-size:12px;font-weight:700;color:#B8602A}
+.a4 h1{margin:0;font-size:40px;font-weight:900;line-height:1.1;text-wrap:balance}
+.a4 h2{margin:0;font-size:28px;font-weight:900;line-height:1.15;text-wrap:balance}
+.a4 p{margin:0}
+.a4 .lead{font-size:15px;line-height:1.85;color:#3A3533}
+.a4 .num{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+.a4 .meta{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1.5px solid #141214}
+.a4 .meta>div{padding:10px 0 0;display:flex;flex-direction:column;gap:3px;padding-inline-start:12px;border-inline-start:1px solid rgba(20,18,20,.12)}
+.a4 .meta>div:first-child{padding-inline-start:0;border:0}
+.a4 .meta span{font-size:10px;color:#8A837A}
+.a4 .meta b{font-size:12.5px;font-weight:700}
+.a4 table{width:100%;border-collapse:collapse;font-size:12px}
+.a4 th{font-weight:500;font-size:10.5px;color:#8A837A;text-align:right;padding:0 8px 8px;border-bottom:1.5px solid #141214}
+.a4 td{padding:8px 8px;border-bottom:1px solid rgba(20,18,20,.10);vertical-align:top}
+.a4 td .s{display:block;color:#7A736B;font-size:10.5px;margin-top:2px;line-height:1.5}
+.a4 .c-n{width:28px;color:#8A837A}
+.a4 .c-q,.a4 .c-p,.a4 .c-t{text-align:left;white-space:nowrap}
+.a4 th.c-q,.a4 th.c-p,.a4 th.c-t{text-align:left}
+.a4 .tot{align-self:flex-end;width:300px;display:flex;flex-direction:column;font-size:12px}
+.a4 .tot>div{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(20,18,20,.10)}
+.a4 .tot .grand{margin-top:8px;background:#050506;color:#F4F0EA;border:0;border-radius:10px;padding:12px 14px;align-items:baseline;position:relative;overflow:hidden}
+.a4 .tot .grand b{font-size:22px;color:#E0AA60;font-weight:900}
+.a4 .words{font-size:10.5px;color:#7A736B;align-self:flex-end;width:300px;margin-top:6px}
+.a4 .cols{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+.a4 .blk h4{margin:0 0 8px;font-size:12px;font-weight:700;color:#141214;border-bottom:1px solid rgba(20,18,20,.15);padding-bottom:6px}
+.a4 .blk ol,.a4 .blk ul{margin:0;padding-inline-start:16px;font-size:11px;line-height:1.75;color:#3A3533}
+.a4 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:11px;color:#3A3533}
+.a4 .kv span{color:#8A837A}
+.a4 .sign{display:grid;grid-template-columns:1fr 1fr;gap:40px;font-size:11px;color:#6F6961}
+.a4 .sign div{border-top:1px solid rgba(20,18,20,.35);padding-top:8px;height:58px}
+.a4.dark{background:#050506;color:#F4F0EA}
+.a4 .rule{height:2px;border-radius:2px;background:linear-gradient(90deg,rgba(20,18,20,.08),#E0AA60)}
+.a4 .scope{display:grid;grid-template-columns:1fr 1fr;gap:26px 22px}
+.a4 .scope>div{border-top:1.5px solid #141214;padding-top:14px;min-height:120px;display:flex;flex-direction:column;gap:4px}
+.a4 .scope .k{font-size:13px;color:#B8602A;font-weight:700}
+.a4 .scope b{font-size:18px;font-weight:700}
+.a4 .scope p{font-size:12.5px;line-height:1.7;color:#4A4441}
+.a4 .gantt{display:flex;flex-direction:column;gap:0;font-size:11px}
+.a4 .gantt .gr{display:grid;grid-template-columns:170px 1fr;align-items:center;min-height:44px;font-size:12.5px;border-bottom:1px solid rgba(20,18,20,.08)}
+.a4 .gantt .track{position:relative;height:38px}
+.a4 .gantt .track i{position:absolute;top:11px;height:16px;border-radius:8px}
+.a4 .gantt .wk{position:absolute;top:0;bottom:0;border-inline-start:1px dashed rgba(20,18,20,.10)}
+.a4 .gantt .axis{display:grid;grid-template-columns:170px 1fr;font-size:9.5px;color:#8A837A;padding-bottom:6px;border-bottom:1.5px solid #141214}
+.a4 .gantt .axis .ticks{position:relative;height:14px}
+.a4 .gantt .axis .ticks span{position:absolute;transform:translateX(50%)}
+.a4 .phase{display:grid;grid-template-columns:30px 1fr auto;gap:10px;padding:13px 0;border-bottom:1px solid rgba(20,18,20,.10);font-size:11.5px;align-items:start}
+.a4 .phase .i{font-weight:900;color:#B8602A;font-size:13px}
+.a4 .phase b{font-size:15px}
+.a4 .phase p{color:#4A4441;font-size:12.5px;line-height:1.7;margin-top:2px}
+.a4 .phase .d{color:#6F6961;font-size:11px;white-space:nowrap}
+.a4 .team{display:grid;grid-template-columns:repeat(2,1fr);gap:34px 26px}
+.a4 .team .m{display:grid;grid-template-columns:130px 1fr;gap:14px;align-items:center}
+.a4 .team .ph0{width:130px;height:170px;border-radius:65px;overflow:hidden;background:#E0AA60}
+.a4 .team .ph0 img{width:100%;height:100%;object-fit:cover;object-position:50% 20%;display:block}
+.a4 .team b{font-size:18px;display:block}
+.a4 .team span{font-size:13px;color:#B8602A;display:block}
+.a4 .team p{font-size:12px;color:#4A4441;line-height:1.6;margin-top:4px}
+.a4 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.a4 .stats>div{border-top:1px solid rgba(20,18,20,.2);padding-top:8px}
+.a4 .stats b{font-size:30px;font-weight:700;display:block;direction:ltr;text-align:right}
+.a4 .stats span{font-size:12px;color:#6F6961}
+
+.bc{width:1020px;height:660px;background:#050506;color:#fff;direction:rtl}
+</style>
+
+<div class="app" dir="rtl" lang="ar">
+<header class="bar">
+  <div class="bar-in">
+    <div class="brand"><img src="img/mark-white.png" alt=""><div><b>استوديو ستوري</b><small>لوحة تعديل ملفات الهوية</small></div></div>
+    <nav class="tabs" role="tablist" aria-label="الأقسام">
+      <button class="tab" role="tab" id="tab-profile" data-v="profile" aria-selected="true">الملف التعريفي</button>
+      <button class="tab" role="tab" id="tab-card" data-v="card" aria-selected="false">بطاقة العمل</button>
+      <button class="tab" role="tab" id="tab-quote" data-v="quote" aria-selected="false">عرض السعر</button>
+      <button class="tab" role="tab" id="tab-proposal" data-v="proposal" aria-selected="false">العرض الفني والمالي</button>
+    </nav>
+    <div class="spacer"></div>
+    <div class="status" id="status" data-s="idle"><span class="dot"></span><span id="status-t">جارٍ الاتصال بالحفظ…</span></div>
+    <button class="btn primary" id="export-btn">تصدير PDF</button>
+  </div>
+</header>
+
+<main>
+  <!-- PROFILE -->
+  <section class="view" id="v-profile">
+    <div class="work">
+      <aside class="side">
+        <div class="card-ui">
+          <h3>طريقة التعديل</h3>
+          <p class="hint">اضغط على أي نص داخل الشرائح واكتب مباشرة. اضغط على أي صورة لاستبدالها من جهازك. التعديلات تُحفظ تلقائيًا.</p>
+          <label class="check"><input type="checkbox" id="edit-toggle" checked> تفعيل التعديل المباشر</label>
+        </div>
+        <div class="card-ui">
+          <h3>الشرائح</h3>
+          <p class="hint">ألغِ تحديد أي شريحة لاستبعادها من ملف PDF.</p>
+          <div class="slist" id="slist"></div>
+        </div>
+        <div class="card-ui">
+          <h3>ملف التصدير</h3>
+          <div class="field"><label for="pf-name">اسم الملف</label><input id="pf-name" value="Story Real Estate Profile 2026"></div>
+          <div class="field"><label for="pf-q">الجودة</label><select id="pf-q"><option value="1">عادية (أخف حجمًا)</option><option value="1.5" selected>عالية</option><option value="2">طباعة</option></select></div>
+        </div>
+      </aside>
+      <div class="canvas editing" id="slides"></div>
+    </div>
+  </section>
+
+  <!-- BUSINESS CARD -->
+  <section class="view" id="v-card" hidden>
+    <div class="work">
+      <aside class="side">
+        <div class="card-ui">
+          <h3>بيانات البطاقة</h3>
+          <div class="field"><label for="c-name">الاسم</label><input id="c-name" data-k="name"></div>
+          <div class="field"><label for="c-name-en">الاسم بالإنجليزي</label><input id="c-name-en" data-k="nameEn" dir="ltr"></div>
+          <div class="field"><label for="c-title">المسمى الوظيفي</label><input id="c-title" data-k="title"></div>
+          <div class="field"><label for="c-phone">الجوال</label><input id="c-phone" data-k="phone" dir="ltr"></div>
+          <div class="field"><label for="c-email">البريد</label><input id="c-email" data-k="email" dir="ltr"></div>
+          <div class="field"><label for="c-web">الموقع</label><input id="c-web" data-k="web" dir="ltr"></div>
+          <div class="field"><label for="c-city">المدينة</label><input id="c-city" data-k="city"></div>
+          <div class="field"><label for="c-tag">العبارة على الوجه الأمامي</label><input id="c-tag" data-k="tag"></div>
+          <div class="field"><label for="c-front">خلفية الوجه الأمامي</label><select id="c-front" data-k="front"><option value="img/cover-glass-3d-c.jpg">الزجاج المضيء</option><option value="img/cover-glass-3d.jpg">الزجاج — نسخة ٢</option><option value="img/cover-glass-3d-b.jpg">الزجاج — نسخة ٣</option><option value="orbs">توهج الألوان فقط</option></select></div>
+          <label class="check"><input type="checkbox" id="c-bleed" data-k="bleed"> إضافة هامش قص 3 مم للمطبعة</label>
+        </div>
+        <p class="hint">المقاس 85 × 55 مم. يُصدَّر ملف PDF من صفحتين: الوجه الأمامي ثم الخلفي.</p>
+      </aside>
+      <div class="canvas"><div class="pair" id="card-out"></div></div>
+    </div>
+  </section>
+
+  <!-- QUOTE -->
+  <section class="view" id="v-quote" hidden>
+    <div class="work">
+      <aside class="side" id="q-form"></aside>
+      <div class="canvas"><div class="docstack" id="quote-out"></div></div>
+    </div>
+  </section>
+
+  <!-- PROPOSAL -->
+  <section class="view" id="v-proposal" hidden>
+    <div class="work">
+      <aside class="side" id="p-form"></aside>
+      <div class="canvas"><div class="docstack" id="prop-out"></div></div>
+    </div>
+  </section>
+</main>
+
+</div>
+<input type="file" id="img-pick" accept="image/png,image/jpeg,image/webp" hidden>
+<div class="ov" id="ov" dir="rtl" hidden><div class="ov-box"><b id="ov-t">جارٍ تجهيز الملف…</b><div class="prog"><i id="ov-p"></i></div><span class="hint" id="ov-s"></span></div></div>
+<div class="toast" id="toast" dir="rtl" hidden></div>
+
+<script type="application/json" id="slides-src">[{"label": "الغلاف", "num": "01", "style": "background:#050506;color:#FFFFFF;font-family:'Thmanyah Sans',sans-serif;overflow:hidden", "html": "<img src=\"img/cover-glass-3d-c.jpg\" alt=\"\" style=\"position:absolute;inset:0;width:100%;height:100%;object-fit:cover\"><div style=\"position:absolute;inset:0;background-image:url(img/grain.png);opacity:.06;mix-blend-mode:overlay;pointer-events:none\"><\/div>\n<div style=\"position:absolute;top:56px;right:80px;left:80px;display:flex;justify-content:space-between;font-size:20px\"><div style=\"font-weight:300\">الملف التعريفي<\/div><div style=\"opacity:.7\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">2026<\/span><\/div><\/div>\n<div style=\"position:absolute;right:120px;top:0;bottom:0;width:640px;display:flex;flex-direction:column;justify-content:center;gap:40px\">\n<img src=\"img/logo-white.png\" alt=\"ستوري العقارية\" style=\"width:300px;align-self:flex-start\">\n<div style=\"font-size:45px;font-weight:700;line-height:1.15;text-wrap:balance\">الشريك الموثوق<br>للتسويق العقاري<\/div>\n<div style=\"font-size:28px;color:#D8D0C6\">الاتصال · التسويق · الإبداع<\/div><\/div>\n<div style=\"position:absolute;bottom:52px;right:80px;left:80px;display:flex;justify-content:space-between;font-size:24px;color:#BDB6AC\"><div>story.sa<\/div><div><span dir=\"ltr\" style=\"unicode-bidi:isolate\">© Story 2026<\/span><\/div><\/div>"}, {"label": "ستوري", "num": "02", "style": "background:#050506;color:#FFFFFF;font-family:'Thmanyah Sans',sans-serif;overflow:hidden", "html": "<div style=\"position:absolute;left:-200px;top:760px;width:900px;height:500px;border-radius:50%;background:#B8602A;filter:blur(160px);opacity:1\"><\/div><div style=\"position:absolute;left:500px;top:860px;width:700px;height:380px;border-radius:50%;background:#E0AA60;filter:blur(150px);opacity:0.9\"><\/div><div style=\"position:absolute;left:1200px;top:820px;width:800px;height:420px;border-radius:50%;background:#2B3A78;filter:blur(170px);opacity:1\"><\/div><div style=\"position:absolute;inset:0;background-image:url(img/grain.png);opacity:.06;mix-blend-mode:overlay;pointer-events:none\"><\/div>\n<div style=\"position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:28px;padding-bottom:120px\"><div style=\"font-size: 133px; font-weight: 300; line-height: 1.2; text-align: center\">لكل مشروع <b>قصة<br><\/b>ونحـــــن <span style=\"font-weight: 900;\">نرويــهـــــا<\/span><\/div><\/div>\n<div style=\"position:absolute;top:56px;right:80px;left:80px;display:flex;justify-content:space-between;align-items:center;font-size:20px;color:#FFFFFF\"><div style=\"font-weight:300\">ستوري<\/div><div style=\"font-weight:400;opacity:.7\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">02<\/span><\/div><\/div><img src=\"img/mark-white.png\" alt=\"\" style=\"position:absolute;left:80px;bottom:52px;height:34px\">"}, {"label": "المحتوى", "num": "03", "style": "background:#050506;color:#FFFFFF;font-family:'Thmanyah Sans',sans-serif;overflow:hidden", "html": "<div style=\"position:absolute;left:-300px;top:-200px;width:700px;height:500px;border-radius:50%;background:#2B3A78;filter:blur(180px);opacity:0.7\"><\/div><div style=\"position:absolute;inset:0;background-image:url(img/grain.png);opacity:.06;mix-blend-mode:overlay;pointer-events:none\"><\/div>\n<div style=\"position:absolute;right:120px;left:120px;top:180px;bottom:140px;display:flex;flex-direction:column;justify-content:space-between\"><div style=\"display:flex;align-items:center;gap:40px\"><div style=\"font-size:45px;font-weight:900;width:420px;flex:none\">من نحن<\/div><div style=\"font-size:26px;color:#BDB6AC;width:360px;flex:none\">الهوية والرؤية<\/div><div style=\"flex:1;height:3px;border-radius:3px;background:linear-gradient(90deg,rgba(255,255,255,.15),#E0AA60)\"><\/div><div style=\"font-size:30px;font-weight:500;width:60px;text-align:left\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">04<\/span><\/div><\/div><div style=\"display:flex;align-items:center;gap:40px\"><div style=\"font-size:45px;font-weight:900;width:420px;flex:none\">خدماتنا<\/div><div style=\"font-size:26px;color:#BDB6AC;width:360px;flex:none\">الاتصال · التسويق · الإبداع<\/div><div style=\"flex:1;height:3px;border-radius:3px;background:linear-gradient(90deg,rgba(255,255,255,.15),#C9A46E)\"><\/div><div style=\"font-size:30px;font-weight:500;width:60px;text-align:left\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">05<\/span><\/div><\/div><div style=\"display:flex;align-items:center;gap:40px\"><div style=\"font-size:45px;font-weight:900;width:420px;flex:none\">أرقامنا<\/div><div style=\"font-size:26px;color:#BDB6AC;width:360px;flex:none\">أثر بالأرقام<\/div><div style=\"flex:1;height:3px;border-radius:3px;background:linear-gradient(90deg,rgba(255,255,255,.15),#B8602A)\"><\/div><div style=\"font-size:30px;font-weight:500;width:60px;text-align:left\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">09<\/span><\/div><\/div><div style=\"display:flex;align-items:center;gap:40px\"><div style=\"font-size:45px;font-weight:900;width:420px;flex:none\">شركاء النجاح<\/div><div style=\"font-size:26px;color:#BDB6AC;width:360px;flex:none\">ثقة نعتز بها<\/div><div style=\"flex:1;height:3px;border-radius:3px;background:linear-gradient(90deg,rgba(255,255,255,.15),#8A6446)\"><\/div><div style=\"font-size:30px;font-weight:500;width:60px;text-align:left\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">10<\/span><\/div><\/div><div style=\"display:flex;align-items:center;gap:40px\"><div style=\"font-size:45px;font-weight:900;width:420px;flex:none\">فريق العمل<\/div><div style=\"font-size:26px;color:#BDB6AC;width:360px;flex:none\">العقول خلف القصة<\/div><div style=\"flex:1;height:3px;border-radius:3px;background:linear-gradient(90deg,rgba(255,255,255,.15),#4B5CA8)\"><\/div><div style=\"font-size:30px;font-weight:500;width:60px;text-align:left\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">11<\/span><\/div><\/div><div style=\"display:flex;align-items:center;gap:40px\"><div style=\"font-size:45px;font-weight:900;width:420px;flex:none\">قصة نجاح<\/div><div style=\"font-size:26px;color:#BDB6AC;width:360px;flex:none\">مجموعة تطوير<\/div><div style=\"flex:1;height:3px;border-radius:3px;background:linear-gradient(90deg,rgba(255,255,255,.15),#2B3A78)\"><\/div><div style=\"font-size:30px;font-weight:500;width:60px;text-align:left\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">12<\/span><\/div><\/div><\/div>\n<div style=\"position:absolute;top:56px;right:80px;left:80px;display:flex;justify-content:space-between;align-items:center;font-size:20px;color:#FFFFFF\"><div style=\"font-weight:300\">المحتوى<\/div><div style=\"font-weight:400;opacity:.7\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">03<\/span><\/div><\/div><img src=\"img/mark-white.png\" alt=\"\" style=\"position:absolute;left:80px;bottom:52px;height:34px\">"}, {"label": "من نحن", "num": "04", "style": "background:#F4F0EA;color:#111;font-family:'Thmanyah Sans',sans-serif;overflow:hidden", "html": "<div style=\"position:absolute;left:-260px;top:700px;width:900px;height:600px;border-radius:50%;background:#E0AA60;filter:blur(170px);opacity:0.55\"><\/div><div style=\"position:absolute;left:200px;top:860px;width:700px;height:400px;border-radius:50%;background:#B8602A;filter:blur(170px);opacity:0.35\"><\/div>\n<div style=\"position:absolute;right:120px;top:190px;width:1080px;display:flex;flex-direction:column;gap:44px\">\n<div style=\"font-size:30px;font-weight:700;color:#8A6446\">من نحن<\/div>\n<div style=\"font-size:42px;font-weight:300;line-height:1.35;text-wrap:pretty\">في <b style=\"font-weight:900\">ستوري<\/b> نقدّم حلولًا تسويقية متكاملة ترتكز على <b style=\"font-weight:900\">فهم عميق<\/b> للسوق العقاري المحلي وتوجهات رؤية المملكة، ونرافق مشاريعكم من الفكرة حتى <b style=\"font-weight:900\">النتيجة<\/b>.<\/div><\/div>\n<div style=\"position:absolute;right:120px;left:120px;bottom:150px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:48px\"><div style=\"border-top:2px solid #111;padding-top:22px;display:flex;flex-direction:column;gap:10px\"><div style=\"font-size:28px;font-weight:900\">التخصص<\/div><div style=\"font-size:26px;line-height:1.5;color:#3A3632\">التسويق العقاري بكل مراحله، من الإطلاق إلى البيع.<\/div><\/div><div style=\"border-top:2px solid #111;padding-top:22px;display:flex;flex-direction:column;gap:10px\"><div style=\"font-size:28px;font-weight:900\">النطاق<\/div><div style=\"font-size:26px;line-height:1.5;color:#3A3632\">الاتصال والتسويق والإبداع تحت سقف واحد.<\/div><\/div><div style=\"border-top:2px solid #111;padding-top:22px;display:flex;flex-direction:column;gap:10px\"><div style=\"font-size:28px;font-weight:900\">الموقع<\/div><div style=\"font-size:26px;line-height:1.5;color:#3A3632\">المملكة العربية السعودية.<\/div><\/div><\/div>\n<div style=\"position:absolute;top:56px;right:80px;left:80px;display:flex;justify-content:space-between;align-items:center;font-size:20px;color:#111\"><div style=\"font-weight:300\">من نحن<\/div><div style=\"font-weight:400;opacity:.7\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">04<\/span><\/div><\/div><img src=\"img/mark-navy.png\" alt=\"\" style=\"position:absolute;left:80px;bottom:52px;height:34px\">"}, {"label": "خدماتنا", "num": "05", "style": "background:#050506;color:#FFFFFF;font-family:'Thmanyah Sans',sans-serif;overflow:hidden", "html": "<div style=\"position:absolute;inset:0;background-image:url(img/grain.png);opacity:.06;mix-blend-mode:overlay;pointer-events:none\"><\/div>\n<div style=\"position:absolute;right:120px;top:170px;font-size:84px;font-weight:900;line-height:1\">ماذا نقدّم؟<\/div>\n<div style=\"position:absolute;right:80px;left:80px;top:400px;bottom:130px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px\"><div style=\"position:relative;border-radius:28px;overflow:hidden;background:#101012;padding:44px;display:flex;flex-direction:column;justify-content:space-between\"><div style=\"position:absolute;left:-120px;top:300px;width:520px;height:360px;border-radius:50%;background:#E0AA60;filter:blur(110px);opacity:0.9\"><\/div><div style=\"position:relative;font-size:30px;font-weight:700\">خدمات الاتصال<\/div><div style=\"position:relative;display:flex;flex-direction:column;gap:18px\"><div style=\"font-size:105px;font-weight:900;line-height:.9\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">01<\/span><\/div><div style=\"font-size:26px;line-height:1.5\">نبني سمعة مؤسسية متماسكة ونوصل رسائل المشروع إلى الإعلام والجمهور بثقة.<\/div><\/div><\/div><div style=\"position:relative;border-radius:28px;overflow:hidden;background:#101012;padding:44px;display:flex;flex-direction:column;justify-content:space-between\"><div style=\"position:absolute;left:-120px;top:300px;width:520px;height:360px;border-radius:50%;background:#B8602A;filter:blur(110px);opacity:0.9\"><\/div><div style=\"position:relative;font-size:30px;font-weight:700\">خدمات التسويق<\/div><div style=\"position:relative;display:flex;flex-direction:column;gap:18px\"><div style=\"font-size:105px;font-weight:900;line-height:.9\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">02<\/span><\/div><div style=\"font-size:26px;line-height:1.5\">حملات مدروسة بالأرقام تستهدف الجمهور الصحيح وتحوّل الاهتمام إلى مبيعات.<\/div><\/div><\/div><div style=\"position:relative;border-radius:28px;overflow:hidden;background:#101012;padding:44px;display:flex;flex-direction:column;justify-content:space-between\"><div style=\"position:absolute;left:-120px;top:300px;width:520px;height:360px;border-radius:50%;background:#4B5CA8;filter:blur(110px);opacity:0.9\"><\/div><div style=\"position:relative;font-size:30px;font-weight:700\">الخدمات الإبداعية<\/div><div style=\"position:relative;display:flex;flex-direction:column;gap:18px\"><div style=\"font-size:105px;font-weight:900;line-height:.9\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">03<\/span><\/div><div style=\"font-size:26px;line-height:1.5\">محتوى بصري يروي قصة المشروع ويُبرز قيمته بأعلى جودة إنتاج.<\/div><\/div><\/div><\/div>\n<div style=\"position:absolute;top:56px;right:80px;left:80px;display:flex;justify-content:space-between;align-items:center;font-size:20px;color:#FFFFFF\"><div style=\"font-weight:300\">خدماتنا<\/div><div style=\"font-weight:400;opacity:.7\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">05<\/span><\/div><\/div><img src=\"img/mark-white.png\" alt=\"\" style=\"position:absolute;left:80px;bottom:52px;height:34px\">"}, {"label": "خدمات الاتصال", "num": "06", "style": "background:#050506;color:#FFFFFF;font-family:'Thmanyah Sans',sans-serif;overflow:hidden", "html": "<div style=\"position:absolute;left:0;top:0;bottom:0;width:820px;overflow:hidden\"><img src=\"img/kingdom-sunset.jpg\" alt=\"\" style=\"width:100%;height:100%;object-fit:cover;filter:grayscale(1) contrast(1.1) brightness(.8)\"><div style=\"position:absolute;inset:0;background:linear-gradient(270deg,#050506 0%,rgba(5,5,6,0) 45%)\"><\/div><\/div><div style=\"position:absolute;left:560px;top:640px;width:560px;height:420px;border-radius:50%;background:#E0AA60;filter:blur(150px);opacity:0.85\"><\/div><div style=\"position:absolute;inset:0;background-image:url(img/grain.png);opacity:.06;mix-blend-mode:overlay;pointer-events:none\"><\/div>\n<div style=\"position:absolute;right:120px;top:170px;width:880px;display:flex;flex-direction:column;gap:26px\"><div style=\"font-size:28px;font-weight:700;color:#E0AA60\">خدماتنا · <span dir=\"ltr\" style=\"unicode-bidi:isolate\">01<\/span><\/div><div style=\"font-size:73px;font-weight:900;line-height:1.25\">خدمات الاتصال<\/div><div style=\"font-size:30px;line-height:1.5;color:#D8D0C6;max-width:760px\">نبني سمعة مؤسسية متماسكة ونوصل رسائل المشروع إلى الإعلام والجمهور بثقة.<\/div><\/div>\n<div style=\"position:absolute;right:120px;width:880px;bottom:130px;display:flex;flex-direction:column\"><div style=\"display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.18);font-size:30px\"><span>التخطيط الاستراتيجي للاتصال<\/span><span style=\"font-size:24px;color:#9A948C\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">01<\/span><\/span><\/div><div style=\"display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.18);font-size:30px\"><span>إدارة الأزمات وحماية السمعة<\/span><span style=\"font-size:24px;color:#9A948C\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">02<\/span><\/span><\/div><div style=\"display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.18);font-size:30px\"><span>العلاقات الإعلامية والتوزيع الصحفي<\/span><span style=\"font-size:24px;color:#9A948C\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">03<\/span><\/span><\/div><div style=\"display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.18);font-size:30px\"><span>استراتيجية الفعاليات وتغطيتها<\/span><span style=\"font-size:24px;color:#9A948C\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">04<\/span><\/span><\/div><div style=\"display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.18);font-size:30px\"><span>إدارة الوفود الإعلامية وقياس الأثر<\/span><span style=\"font-size:24px;color:#9A948C\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">05<\/span><\/span><\/div><\/div>\n<div style=\"position:absolute;top:56px;right:80px;left:80px;display:flex;justify-content:space-between;align-items:center;font-size:20px;color:#FFFFFF\"><div style=\"font-weight:300\">خدمات الاتصال<\/div><div style=\"font-weight:400;opacity:.7\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">06<\/span><\/div><\/div><img src=\"img/mark-white.png\" alt=\"\" style=\"position:absolute;left:80px;bottom:52px;height:34px\">"}, {"label": "خدمات التسويق", "num": "07", "style": "background:#050506;color:#FFFFFF;font-family:'Thmanyah Sans',sans-serif;overflow:hidden", "html": "<div style=\"position:absolute;left:0;top:0;bottom:0;width:820px;overflow:hidden\"><\/div><div style=\"position:absolute;left:560px;top:640px;width:560px;height:420px;border-radius:50%;background:#B8602A;filter:blur(150px);opacity:0.85\"><\/div><div style=\"position:absolute;inset:0;background-image:url(img/grain.png);opacity:.06;mix-blend-mode:overlay;pointer-events:none;left:-62px;top:-97px\"><\/div>\n<div style=\"position:absolute;right:120px;top:170px;width:880px;display:flex;flex-direction:column;gap:26px\"><div style=\"font-size:28px;font-weight:700;color:#B8602A\">خدماتنا · <span dir=\"ltr\" style=\"unicode-bidi:isolate\">02<\/span><\/div><div style=\"font-size:73px;font-weight:900;line-height:1.25\">خدمات التسويق<\/div><div style=\"font-size:30px;line-height:1.5;color:#D8D0C6;max-width:760px\">حملات مدروسة بالأرقام تستهدف الجمهور الصحيح وتحوّل الاهتمام إلى مبيعات.<\/div><\/div>\n<div style=\"position:absolute;right:120px;width:880px;bottom:130px;display:flex;flex-direction:column\"><div style=\"display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.18);font-size:30px\"><span>حملات <span dir=\"ltr\" style=\"unicode-bidi:isolate\">360°<\/span><\/span><span style=\"font-size:24px;color:#9A948C\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">01<\/span><\/span><\/div><div style=\"display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.18);font-size:30px\"><span>التسويق عبر المؤثرين<\/span><span style=\"font-size:24px;color:#9A948C\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">02<\/span><\/span><\/div><div style=\"display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.18);font-size:30px\"><span>دراسة السوق<\/span><span style=\"font-size:24px;color:#9A948C\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">03<\/span><\/span><\/div><div style=\"display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.18);font-size:30px\"><span>الإعلانات المدفوعة<\/span><span style=\"font-size:24px;color:#9A948C\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">04<\/span><\/span><\/div><div style=\"display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.18);font-size:30px\"><span><span dir=\"ltr\" style=\"unicode-bidi:isolate\">SEO<\/span><\/span><span style=\"font-size:24px;color:#9A948C\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">05<\/span><\/span><\/div><div style=\"display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.18);font-size:30px\"><span>تقارير العائد<\/span><span style=\"font-size:24px;color:#9A948C\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">06<\/span><\/span><\/div><\/div>\n<div style=\"position:absolute;top:56px;right:80px;left:80px;display:flex;justify-content:space-between;align-items:center;font-size:20px;color:#FFFFFF\"><div style=\"font-weight:300\">خدمات التسويق<\/div><div style=\"font-weight:400;opacity:.7\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">07<\/span><\/div><\/div><img src=\"img/mark-white.png\" alt=\"\" style=\"position:absolute;left:80px;bottom:52px;height:34px\">"}, {"label": "الخدمات الإبداعية", "num": "08", "style": "background:#050506;color:#FFFFFF;font-family:'Thmanyah Sans',sans-serif;overflow:hidden", "html": "<div style=\"position:absolute;left:0;top:0;bottom:0;width:820px;overflow:hidden\"><\/div><div style=\"position:absolute;left:560px;top:640px;width:560px;height:420px;border-radius:50%;background:#4B5CA8;filter:blur(150px);opacity:0.85\"><\/div><div style=\"position:absolute;inset:0;background-image:url(img/grain.png);opacity:.06;mix-blend-mode:overlay;pointer-events:none;left:-12px;top:-21px\"><\/div>\n<div style=\"position:absolute;right:120px;top:170px;width:880px;display:flex;flex-direction:column;gap:26px\"><div style=\"font-size:28px;font-weight:700;color:#4B5CA8\">خدماتنا · <span dir=\"ltr\" style=\"unicode-bidi:isolate\">03<\/span><\/div><div style=\"font-size:73px;font-weight:900;line-height:1.25\">الخدمات الإبداعية<\/div><div style=\"font-size:30px;line-height:1.5;color:#D8D0C6;max-width:760px\">محتوى بصري يروي قصة المشروع ويُبرز قيمته بأعلى جودة إنتاج.<\/div><\/div>\n<div style=\"position:absolute;right:120px;width:880px;bottom:130px;display:flex;flex-direction:column\"><div style=\"display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.18);font-size:30px\"><span>استراتيجية العلامة<\/span><span style=\"font-size:24px;color:#9A948C\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">01<\/span><\/span><\/div><div style=\"display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.18);font-size:30px\"><span>المحتوى والسيناريو<\/span><span style=\"font-size:24px;color:#9A948C\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">02<\/span><\/span><\/div><div style=\"display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.18);font-size:30px\"><span>التصميم الجرافيكي<\/span><span style=\"font-size:24px;color:#9A948C\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">03<\/span><\/span><\/div><div style=\"display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.18);font-size:30px\"><span>الإنتاج المرئي<\/span><span style=\"font-size:24px;color:#9A948C\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">04<\/span><\/span><\/div><div style=\"display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.18);font-size:30px\"><span>الموشن جرافيك <span dir=\"ltr\" style=\"unicode-bidi:isolate\">2D/3D<\/span><\/span><span style=\"font-size:24px;color:#9A948C\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">05<\/span><\/span><\/div><div style=\"display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-top:1px solid rgba(255,255,255,.18);font-size:30px\"><span>المواقع <span dir=\"ltr\" style=\"unicode-bidi:isolate\">UI/UX<\/span><\/span><span style=\"font-size:24px;color:#9A948C\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">06<\/span><\/span><\/div><\/div>\n<div style=\"position:absolute;top:56px;right:80px;left:80px;display:flex;justify-content:space-between;align-items:center;font-size:20px;color:#FFFFFF\"><div style=\"font-weight:300\">الخدمات الإبداعية<\/div><div style=\"font-weight:400;opacity:.7\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">08<\/span><\/div><\/div><img src=\"img/mark-white.png\" alt=\"\" style=\"position:absolute;left:80px;bottom:52px;height:34px\">"}, {"label": "أرقامنا", "num": "09", "style": "background:#050506;color:#FFFFFF;font-family:'Thmanyah Sans',sans-serif;overflow:hidden", "html": "<div style=\"position:absolute;left:-200px;top:500px;width:900px;height:700px;border-radius:50%;background:#B8602A;filter:blur(170px);opacity:0.9\"><\/div><div style=\"position:absolute;left:300px;top:700px;width:600px;height:400px;border-radius:50%;background:#E0AA60;filter:blur(160px);opacity:0.8\"><\/div><div style=\"position:absolute;left:1300px;top:-200px;width:700px;height:500px;border-radius:50%;background:#2B3A78;filter:blur(170px);opacity:0.8\"><\/div><div style=\"position:absolute;inset:0;background-image:url(img/grain.png);opacity:.06;mix-blend-mode:overlay;pointer-events:none\"><\/div>\n<div style=\"position:absolute;left:120px;top:180px;display:flex;flex-direction:column;gap:28px;align-items:flex-end;text-align:left\"><div style=\"font-size:210px;font-weight:900;line-height:1\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">9.8M+<\/span><\/div><div style=\"font-size:34px;font-weight:500\">وصول إجمالي لحملاتنا<\/div><\/div>\n<div style=\"position: absolute; right: 120px; top: 190px; font-size: 83px; font-weight: 300\"><\/div>\n<div style=\"position:absolute;right:120px;left:120px;bottom:140px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:24px\"><div style=\"border-top:2px solid rgba(255,255,255,.5);padding-top:20px;display:flex;flex-direction:column;gap:8px\"><div style=\"font-size:42px;font-weight:700;line-height:1\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">315%+<\/span><\/div><div style=\"font-size:24px;color:#EDE3D6\">نمو في المتابعين<\/div><\/div><div style=\"border-top:2px solid rgba(255,255,255,.5);padding-top:20px;display:flex;flex-direction:column;gap:8px\"><div style=\"font-size:42px;font-weight:700;line-height:1\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">145%+<\/span><\/div><div style=\"font-size:24px;color:#EDE3D6\">نمو في التفاعل<\/div><\/div><div style=\"border-top:2px solid rgba(255,255,255,.5);padding-top:20px;display:flex;flex-direction:column;gap:8px\"><div style=\"font-size:42px;font-weight:700;line-height:1\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">520K+<\/span><\/div><div style=\"font-size:24px;color:#EDE3D6\">مشاهدة<\/div><\/div><div style=\"border-top:2px solid rgba(255,255,255,.5);padding-top:20px;display:flex;flex-direction:column;gap:8px\"><div style=\"font-size:42px;font-weight:700;line-height:1\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">1,576+<\/span><\/div><div style=\"font-size:24px;color:#EDE3D6\">فيديو من إنتاجنا<\/div><\/div><div style=\"border-top:2px solid rgba(255,255,255,.5);padding-top:20px;display:flex;flex-direction:column;gap:8px\"><div style=\"font-size:42px;font-weight:700;line-height:1\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">1,800+<\/span><\/div><div style=\"font-size:24px;color:#EDE3D6\">صورة إبداعية<\/div><\/div><div style=\"border-top:2px solid rgba(255,255,255,.5);padding-top:20px;display:flex;flex-direction:column;gap:8px\"><div style=\"font-size:42px;font-weight:700;line-height:1\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">64+<\/span><\/div><div style=\"font-size:24px;color:#EDE3D6\">حملة ومحتوى<\/div><\/div><\/div>\n<div style=\"position:absolute;top:56px;right:80px;left:80px;display:flex;justify-content:space-between;align-items:center;font-size:20px;color:#FFFFFF\"><div style=\"font-weight:300\">أرقامنا<\/div><div style=\"font-weight:400;opacity:.7\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">09<\/span><\/div><\/div><img src=\"img/mark-white.png\" alt=\"\" style=\"position:absolute;left:80px;bottom:52px;height:34px\">"}, {"label": "شركاء النجاح", "num": "10", "style": "background:#050506;color:#FFFFFF;font-family:'Thmanyah Sans',sans-serif;overflow:hidden", "html": "<div style=\"position:absolute;inset:0;background-image:url(img/grain.png);opacity:.06;mix-blend-mode:overlay;pointer-events:none\"><\/div>\n<div style=\"position:absolute;right:120px;top:170px;display:flex;flex-direction:column;gap:40px\"><div style=\"font-size:73px;font-weight:900;line-height:1.25\">شركاء النجاح<\/div><div style=\"font-size:30px;color:#D8D0C6\">أبرز المطورين العقاريين في المملكة والمنطقة.<\/div><\/div>\n<div style=\"position:absolute;right:120px;left:120px;top:430px;bottom:130px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-auto-rows:1fr;gap:16px\"><div style=\"display:flex;align-items:center;justify-content:center;padding:30px\"><img src=\"img/logo-tatweer.jpg\" alt=\"\" style=\"max-width:100%;max-height:100%;object-fit:contain;filter:grayscale(1) invert(1) brightness(1.1) contrast(1.3);mix-blend-mode:screen\"><\/div><div style=\"display:flex;align-items:center;justify-content:center;padding:30px\"><img src=\"img/logo-azdan.jpg\" alt=\"\" style=\"max-width:100%;max-height:100%;object-fit:contain;filter:grayscale(1) invert(1) brightness(1.1) contrast(1.3);mix-blend-mode:screen\"><\/div><div style=\"display:flex;align-items:center;justify-content:center;padding:30px\"><img src=\"img/p6_p5_8.png\" alt=\"\" style=\"max-width:100%;max-height:100%;object-fit:contain;filter:grayscale(1) invert(1) brightness(1.1) contrast(1.3);mix-blend-mode:screen\"><\/div><div style=\"display:flex;align-items:center;justify-content:center;padding:30px\"><img src=\"img/p6_p5_3.png\" alt=\"\" style=\"max-width:100%;max-height:100%;object-fit:contain;filter:grayscale(1) invert(1) brightness(1.1) contrast(1.3);mix-blend-mode:screen\"><\/div><div style=\"display:flex;align-items:center;justify-content:center;padding:30px\"><img src=\"img/p6_p5_1.png\" alt=\"\" style=\"max-width:100%;max-height:100%;object-fit:contain;filter:grayscale(1) invert(1) brightness(1.1) contrast(1.3);mix-blend-mode:screen\"><\/div><div style=\"display:flex;align-items:center;justify-content:center;padding:30px\"><img src=\"img/p6_p5_7.png\" alt=\"\" style=\"max-width:100%;max-height:100%;object-fit:contain;filter:grayscale(1) invert(1) brightness(1.1) contrast(1.3);mix-blend-mode:screen\"><\/div><div style=\"display:flex;align-items:center;justify-content:center;padding:30px\"><img src=\"img/logo-buyout.jpg\" alt=\"\" style=\"max-width:100%;max-height:100%;object-fit:contain;filter:grayscale(1) invert(1) brightness(1.1) contrast(1.3);mix-blend-mode:screen\"><\/div><div style=\"display:flex;align-items:center;justify-content:center;padding:30px\"><img src=\"img/logo-saudimade.png\" alt=\"\" style=\"max-width:100%;max-height:100%;object-fit:contain;filter:grayscale(1) invert(1) brightness(1.1) contrast(1.3);mix-blend-mode:screen\"><\/div><div style=\"display:flex;align-items:center;justify-content:center;padding:30px\"><img src=\"img/p6_p5_6.png\" alt=\"\" style=\"max-width:100%;max-height:100%;object-fit:contain;filter:grayscale(1) invert(1) brightness(1.1) contrast(1.3);mix-blend-mode:screen\"><\/div><div style=\"display:flex;align-items:center;justify-content:center;padding:30px\"><img src=\"img/p6_p5_9.png\" alt=\"\" style=\"max-width:100%;max-height:100%;object-fit:contain;filter:grayscale(1) invert(1) brightness(1.1) contrast(1.3);mix-blend-mode:screen\"><\/div><div style=\"display:flex;align-items:center;justify-content:center;padding:30px\"><img src=\"img/p6_p5_5.png\" alt=\"\" style=\"max-width:100%;max-height:100%;object-fit:contain;filter:grayscale(1) invert(1) brightness(1.1) contrast(1.3);mix-blend-mode:screen\"><\/div><div style=\"display:flex;align-items:center;justify-content:center;padding:30px\"><img src=\"img/p6_p5_4.png\" alt=\"\" style=\"max-width:100%;max-height:100%;object-fit:contain;filter:grayscale(1) invert(1) brightness(1.1) contrast(1.3);mix-blend-mode:screen\"><\/div><div style=\"display:flex;align-items:center;justify-content:center;padding:30px\"><img src=\"img/p6_p5_11.png\" alt=\"\" style=\"max-width:100%;max-height:100%;object-fit:contain;filter:grayscale(1) invert(1) brightness(1.1) contrast(1.3);mix-blend-mode:screen\"><\/div><div style=\"display:flex;align-items:center;justify-content:center;padding:30px\"><img src=\"img/p6_p5_10.png\" alt=\"\" style=\"max-width:100%;max-height:100%;object-fit:contain;filter:grayscale(1) invert(1) brightness(1.1) contrast(1.3);mix-blend-mode:screen\"><\/div><\/div>\n<div style=\"position:absolute;top:56px;right:80px;left:80px;display:flex;justify-content:space-between;align-items:center;font-size:20px;color:#FFFFFF\"><div style=\"font-weight:300\">شركاء النجاح<\/div><div style=\"font-weight:400;opacity:.7\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">10<\/span><\/div><\/div><img src=\"img/mark-white.png\" alt=\"\" style=\"position:absolute;left:80px;bottom:52px;height:34px\">"}, {"label": "فريق العمل", "num": "11", "style": "background:#050506;color:#FFFFFF;font-family:'Thmanyah Sans',sans-serif;overflow:hidden", "html": "<div style=\"position:absolute;inset:0;background-image:url(img/grain.png);opacity:.06;mix-blend-mode:overlay;pointer-events:none\"><\/div>\n<div style=\"position:absolute;right:0;left:0;top:150px;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center\"><div style=\"font-size:28px;font-weight:700;color:#E0AA60\">فريق العمل<\/div><div style=\"font-size:120px;font-weight:700;line-height:1.1\">العقول خلف القصة<\/div><\/div>\n<div style=\"position:absolute;right:-230px;top:420px;width:330px;height:440px;background:#8A6446;clip-path:path('M74,0 H256 A74,74 0 0 1 330,74 A60,60 0 0 1 310,147 A60,60 0 0 1 330,220 A60,60 0 0 1 310,293 A60,60 0 0 1 330,366 A74,74 0 0 1 256,440 H74 A74,74 0 0 1 0,366 A60,60 0 0 1 20,293 A60,60 0 0 1 0,220 A60,60 0 0 1 20,147 A60,60 0 0 1 0,74 A74,74 0 0 1 74,0 Z')\"><\/div><div style=\"position:absolute;left:-230px;top:420px;width:330px;height:440px;background:#E0AA60;border-radius:165px\"><\/div>\n<div style=\"position:absolute;right:258px;top:420px;width:330px;display:flex;flex-direction:column;gap:22px;align-items:center;text-align:center\"><div style=\"width:330px;height:440px;overflow:hidden;background:#E0AA60;clip-path:path('M90,0 H240 A90,90 0 0 1 330,90 V150 A70,70 0 0 1 306,220 A70,70 0 0 1 330,290 V350 A90,90 0 0 1 240,440 H90 A90,90 0 0 1 0,350 V290 A70,70 0 0 1 24,220 A70,70 0 0 1 0,150 V90 A90,90 0 0 1 90,0 Z')\"><img src=\"img/team-1.webp\" alt=\"\" style=\"width:100%;height:100%;display:block;object-fit:cover;object-position:50% 20%\"><\/div><div style=\"display:flex;flex-direction:column;gap:6px\"><div style=\"font-size:32px;font-weight:700\">عبدالله الأنصاري<\/div><div style=\"font-size:24px;color:#BDB6AC\">المدير التنفيذي<\/div><\/div><\/div>\n<div style=\"position:absolute;right:616px;top:420px;width:330px;display:flex;flex-direction:column;gap:22px;align-items:center;text-align:center\"><div style=\"width:330px;height:440px;overflow:hidden;background:#F4F0EA;border-radius:165px 165px 28px 28px\"><img src=\"img/team-2.webp\" alt=\"\" style=\"width:100%;height:100%;display:block;object-fit:cover;object-position:50% 20%\"><\/div><div style=\"display:flex;flex-direction:column;gap:6px\"><div style=\"font-size:32px;font-weight:700\">محمد الحاج<\/div><div style=\"font-size:24px;color:#BDB6AC\">مدير الاستراتيجية والتسويق<\/div><\/div><\/div>\n<div style=\"position:absolute;right:974px;top:420px;width:330px;display:flex;flex-direction:column;gap:22px;align-items:center;text-align:center\"><div style=\"width:330px;height:440px;overflow:hidden;background:#B8602A;border-radius:165px\"><img src=\"img/team-3.webp\" alt=\"\" style=\"width:100%;height:100%;display:block;object-fit:cover;object-position:50% 30%\"><\/div><div style=\"display:flex;flex-direction:column;gap:6px\"><div style=\"font-size:32px;font-weight:700\">الحسن المجتبى<\/div><div style=\"font-size:24px;color:#BDB6AC\">المدير الإبداعي<\/div><\/div><\/div>\n<div style=\"position:absolute;right:1332px;top:420px;width:330px;display:flex;flex-direction:column;gap:22px;align-items:center;text-align:center\"><div style=\"width:330px;height:440px;overflow:hidden;background:#4B5CA8;clip-path:path('M74,0 H256 A74,74 0 0 1 330,74 A60,60 0 0 1 310,147 A60,60 0 0 1 330,220 A60,60 0 0 1 310,293 A60,60 0 0 1 330,366 A74,74 0 0 1 256,440 H74 A74,74 0 0 1 0,366 A60,60 0 0 1 20,293 A60,60 0 0 1 0,220 A60,60 0 0 1 20,147 A60,60 0 0 1 0,74 A74,74 0 0 1 74,0 Z')\"><img src=\"img/team-4.webp\" alt=\"\" style=\"width:100%;height:100%;display:block;object-fit:cover;object-position:50% 20%\"><\/div><div style=\"display:flex;flex-direction:column;gap:6px\"><div style=\"font-size:32px;font-weight:700\">أدريس الأنصاري<\/div><div style=\"font-size:24px;color:#BDB6AC\">مدير الإنتاج<\/div><\/div><\/div>\n<div style=\"position:absolute;top:56px;right:80px;left:80px;display:flex;justify-content:space-between;align-items:center;font-size:20px;color:#FFFFFF\"><div style=\"font-weight:300\">فريق العمل<\/div><div style=\"font-weight:400;opacity:.7\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">11<\/span><\/div><\/div><img src=\"img/mark-white.png\" alt=\"\" style=\"position:absolute;left:80px;bottom:52px;height:34px\">"}, {"label": "قصة نجاح", "num": "12", "style": "background:#050506;color:#FFFFFF;font-family:'Thmanyah Sans',sans-serif;overflow:hidden", "html": "<div style=\"position:absolute;left:80px;top:140px;bottom:130px;width:900px;border-radius:28px;overflow:hidden\"><img src=\"img/tatweer-video.jpg\" alt=\"\" style=\"width:100%;height:100%;display:block;object-fit:cover\"><\/div><div style=\"position:absolute;left:1000px;top:700px;width:700px;height:400px;border-radius:50%;background:#E0AA60;filter:blur(160px);opacity:0.55\"><\/div><div style=\"position:absolute;inset:0;background-image:url(img/grain.png);opacity:.06;mix-blend-mode:overlay;pointer-events:none\"><\/div>\n<div style=\"position:absolute;right:120px;top:170px;width:720px;display:flex;flex-direction:column;gap:26px\"><div style=\"font-size:28px;font-weight:700;color:#E0AA60\">قصة نجاح<\/div><img src=\"img/logo-tatweer.jpg\" alt=\"مجموعة تطوير\" style=\"height:90px;align-self:flex-start;border-radius:14px\"><div style=\"font-size:56px;font-weight:900;line-height:1\">مجموعة تطوير<\/div><div style=\"font-size:28px;line-height:1.55;color:#D8D0C6\">قدّمنا محتوى بصريًا يعكس مكانة الشركة وطموحاتها، من خلال إنتاج فيديو الموقع الإلكتروني وتصميم التقرير السنوي، بما يعزز تجربة الجمهور ويُبرز منجزات الشركة.<\/div><\/div>\n<div style=\"position:absolute;right:120px;width:720px;bottom:130px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 40px\"><div style=\"border-top:1px solid rgba(255,255,255,.3);padding-top:16px\"><div style=\"font-size:39px;font-weight:700;line-height:1\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">3M+<\/span><\/div><div style=\"font-size:24px;color:#BDB6AC;margin-top:6px\">وصول<\/div><\/div><div style=\"border-top:1px solid rgba(255,255,255,.3);padding-top:16px\"><div style=\"font-size:39px;font-weight:700;line-height:1\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">50%<\/span><\/div><div style=\"font-size:24px;color:#BDB6AC;margin-top:6px\">زيادة في المتابعين<\/div><\/div><div style=\"border-top:1px solid rgba(255,255,255,.3);padding-top:16px\"><div style=\"font-size:39px;font-weight:700;line-height:1\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">500+<\/span><\/div><div style=\"font-size:24px;color:#BDB6AC;margin-top:6px\">فيديو في المكتبة الفنية<\/div><\/div><div style=\"border-top:1px solid rgba(255,255,255,.3);padding-top:16px\"><div style=\"font-size:39px;font-weight:700;line-height:1\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">1,000+<\/span><\/div><div style=\"font-size:24px;color:#BDB6AC;margin-top:6px\">صورة في المكتبة الفنية<\/div><\/div><\/div>\n<div style=\"position:absolute;top:56px;right:80px;left:80px;display:flex;justify-content:space-between;align-items:center;font-size:20px;color:#FFFFFF\"><div style=\"font-weight:300\">قصة نجاح<\/div><div style=\"font-weight:400;opacity:.7\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">12<\/span><\/div><\/div><img src=\"img/mark-white.png\" alt=\"\" style=\"position:absolute;left:80px;bottom:52px;height:34px\">"}, {"label": "تواصل معنا", "num": "13", "style": "background:#050506;color:#FFFFFF;font-family:'Thmanyah Sans',sans-serif;overflow:hidden", "html": "<img src=\"img/cover-glass-3d-c.jpg\" alt=\"\" style=\"position:absolute;inset:0;width:100%;height:100%;object-fit:cover\"><div style=\"position:absolute;inset:0;background-image:url(img/grain.png);opacity:.06;mix-blend-mode:overlay;pointer-events:none\"><\/div>\n<div style=\"position:absolute;right:120px;top:0;bottom:0;width:680px;display:flex;flex-direction:column;justify-content:center;gap:28px\"><div style=\"font-size:30px;color:#EDE3D6\">نحن مستعدون. وأنتم؟<\/div><div style=\"font-size:105px;font-weight:900;line-height:1\">لنصنع<br>قصتكم<\/div>\n<div style=\"display:flex;flex-direction:column;margin-top:24px\"><div style=\"display:flex;justify-content:space-between;padding:16px 0;border-top:1px solid rgba(255,255,255,.3);font-size:28px\"><span style=\"color:#E0AA60\">البريد<\/span><a href=\"mailto:info@story.sa\" style=\"color:#FFFFFF;text-decoration:none\">info@story.sa<\/a><\/div><div style=\"display:flex;justify-content:space-between;padding:16px 0;border-top:1px solid rgba(255,255,255,.3);font-size:28px\"><span style=\"color:#E0AA60\">الهاتف<\/span><span dir=\"ltr\" style=\"unicode-bidi:isolate\">+966 54 499 5399<\/span><\/div><div style=\"display:flex;justify-content:space-between;padding:16px 0;border-top:1px solid rgba(255,255,255,.3);font-size:28px\"><span style=\"color:#E0AA60\">الموقع<\/span><a href=\"https://www.story.sa\" style=\"color:#FFFFFF;text-decoration:none\">story.sa<\/a><\/div><\/div><\/div>\n<div style=\"position:absolute;top:56px;right:80px;left:80px;display:flex;justify-content:space-between;align-items:center;font-size:20px;color:#FFFFFF\"><div style=\"font-weight:300\">تواصل معنا<\/div><div style=\"font-weight:400;opacity:.7\"><span dir=\"ltr\" style=\"unicode-bidi:isolate\">13<\/span><\/div><\/div><img src=\"img/mark-white.png\" alt=\"\" style=\"position:absolute;left:80px;bottom:52px;height:34px\">"}]</script>
+<script src="vendor/html-to-image.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const nl=s=>esc(s).replace(/\n/g,'<br>');
+const lines=s=>String(s||'').split('\n').map(x=>x.trim()).filter(Boolean);
+const money=n=>(Math.round((+n||0)*100)/100).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:2});
+const clone=o=>JSON.parse(JSON.stringify(o));
+const debounce=(fn,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}};
+function toast(msg,ms=3200){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,ms)}
+
+/* ================= STORAGE (db capability, browser fallback) ================= */
+let db=null, assets=null, downloads=null, mode='local';
+const status=(s,t)=>{$('#status').dataset.s=s;$('#status-t').textContent=t};
+const LS='story-studio:';
+async function load(path){
+  if(db){try{const d=await db.doc(path).get();return d.exists?d.data():null}catch(e){console.warn(e)}}
+  try{const v=localStorage.getItem(LS+path);return v?JSON.parse(v):null}catch(e){return null}
+}
+const writing={};
+async function save(path,data){
+  status('saving','جارٍ الحفظ…');
+  try{localStorage.setItem(LS+path,JSON.stringify(data))}catch(e){}
+  if(db){
+    if(writing[path]){writing[path].next=data;return}
+    writing[path]={};
+    try{await db.doc(path).set(data);status('saved','كل التعديلات محفوظة')}
+    catch(e){console.warn(e);status('error',e.code==='invalid_argument'?'لا تملك صلاحية الحفظ':'تعذّر الحفظ، حاول مجددًا')}
+    const nx=writing[path].next;delete writing[path];if(nx)save(path,nx);
+  }else status('local','محفوظ في هذا المتصفح فقط');
+}
+async function remove(path){try{localStorage.removeItem(LS+path)}catch(e){} if(db){try{await db.doc(path).delete()}catch(e){}} status(db?'saved':'local',db?'كل التعديلات محفوظة':'محفوظ في هذا المتصفح فقط')}
+
+/* ================= SCALING PREVIEWS ================= */
+const ro=new ResizeObserver(es=>es.forEach(e=>fit(e.target)));
+function fit(stage){const w=stage.clientWidth,W=+stage.dataset.w,H=+stage.dataset.h;const k=w/W;stage.style.height=(H*k)+'px';stage.firstElementChild.style.transform=`scale(${k})`}
+function stageHTML(w,h,inner,cls=''){return `<div class="stage ${cls}" data-w="${w}" data-h="${h}"><div class="scaler" style="width:${w}px;height:${h}px">${inner}</div></div>`}
+function watch(root){root.querySelectorAll('.stage').forEach(s=>{fit(s);ro.observe(s)})}
+
+/* ================= PROFILE ================= */
+const SLIDES=JSON.parse($('#slides-src').textContent);
+const prof=SLIDES.map(()=>({html:null,hidden:false}));
+function markEditable(root){
+  const walk=el=>{for(const c of el.children){
+    if(c.tagName==='IMG'){c.classList.add('ed-img');continue}
+    if(c.tagName==='BR')continue;
+    const txt=[...c.childNodes].some(n=>n.nodeType===3&&n.textContent.trim());
+    if(txt){c.setAttribute('contenteditable','true');c.spellcheck=false;c.classList.add('ed-t')}else walk(c);
+  }};walk(root);
+}
+function cleanHTML(sec){
+  const c=sec.cloneNode(true);
+  c.querySelectorAll('[contenteditable]').forEach(e=>{e.removeAttribute('contenteditable');e.removeAttribute('spellcheck')});
+  c.querySelectorAll('.ed-t,.ed-img').forEach(e=>{e.classList.remove('ed-t','ed-img');if(!e.className)e.removeAttribute('class')});
+  return c.innerHTML;
+}
+function renderSlide(i){
+  const s=SLIDES[i],st=prof[i];
+  const f=$('#sf-'+i);
+  f.querySelector('.stage').classList.toggle('off',st.hidden);
+  const sec=f.querySelector('section.pg');
+  sec.innerHTML=st.html??s.html;
+  markEditable(sec);
+  f.querySelector('.mod').hidden=!st.html;
+  f.querySelector('.reset').hidden=!st.html;
+  updateList();
+}
+function updateList(){
+  $('#slist').innerHTML=SLIDES.map((s,i)=>`<div class="sitem${prof[i].hidden?' off':''}" data-i="${i}"><input type="checkbox" aria-label="تضمين ${esc(s.label)}" ${prof[i].hidden?'':'checked'}><span class="n">${s.num}</span><span class="l">${esc(s.label)}</span>${prof[i].html?'<span class="mod">معدّلة</span>':''}</div>`).join('');
+}
+function buildProfile(){
+  $('#slides').innerHTML=SLIDES.map((s,i)=>`<div class="frame" id="sf-${i}">
+    <div class="frame-h"><span class="num">${s.num}</span><span class="t">${esc(s.label)}</span><span class="chip gold mod" hidden>معدّلة</span><span class="spacer" style="flex:1"></span><button class="btn sm ghost reset" data-i="${i}" hidden>استرجاع الأصل</button></div>
+    ${stageHTML(1920,1080,`<section class="pg" dir="rtl" style="width:1920px;height:1080px;${esc(s.style)}"></section>`)}
+  </div>`).join('');
+  SLIDES.forEach((_,i)=>renderSlide(i));
+  watch($('#slides'));
+}
+const saveSlide=SLIDES.map((_,i)=>debounce(()=>{
+  const sec=$('#sf-'+i+' section.pg');const html=cleanHTML(sec);
+  prof[i].html=html===SLIDES[i].html?null:html;
+  const f=$('#sf-'+i);f.querySelector('.mod').hidden=!prof[i].html;f.querySelector('.reset').hidden=!prof[i].html;updateList();
+  if(prof[i].html||prof[i].hidden)save('profile/s'+SLIDES[i].num,{html:prof[i].html,hidden:prof[i].hidden});else remove('profile/s'+SLIDES[i].num);
+},700));
+function slideIndexOf(el){const f=el.closest('.frame');return f?+f.id.slice(3):-1}
+$('#slides').addEventListener('input',e=>{const i=slideIndexOf(e.target);if(i>=0)saveSlide[i]()});
+$('#slides').addEventListener('paste',e=>{if(!e.target.closest('[contenteditable]'))return;e.preventDefault();const t=(e.clipboardData||window.clipboardData).getData('text/plain');document.execCommand('insertText',false,t)});
+$('#slides').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.closest('[contenteditable]')&&!e.shiftKey){e.preventDefault();document.execCommand('insertLineBreak')}});
+$('#slides').addEventListener('click',e=>{
+  const r=e.target.closest('.reset');
+  if(r){const i=+r.dataset.i;prof[i].html=null;renderSlide(i);if(prof[i].hidden)save('profile/s'+SLIDES[i].num,{html:null,hidden:true});else remove('profile/s'+SLIDES[i].num);toast('تم استرجاع الشريحة الأصلية');return}
+  const img=e.target.closest('.ed-img');
+  if(img&&$('#slides').classList.contains('editing')){pickImage(img,slideIndexOf(img))}
+});
+$('#slist').addEventListener('change',e=>{const it=e.target.closest('.sitem');const i=+it.dataset.i;prof[i].hidden=!e.target.checked;$('#sf-'+i+' .stage').classList.toggle('off',prof[i].hidden);updateList();save('profile/s'+SLIDES[i].num,{html:prof[i].html,hidden:prof[i].hidden})});
+$('#slist').addEventListener('click',e=>{if(e.target.tagName==='INPUT')return;const it=e.target.closest('.sitem');if(it)$('#sf-'+it.dataset.i).scrollIntoView({behavior:'smooth',block:'start'})});
+$('#edit-toggle').addEventListener('change',e=>{const on=e.target.checked;$('#slides').classList.toggle('editing',on);$$('#slides [contenteditable]').forEach(x=>x.setAttribute('contenteditable',on?'true':'false'))});
+
+let pickTarget=null;
+function pickImage(img,i){pickTarget={img,i};$('#img-pick').value='';$('#img-pick').click()}
+$('#img-pick').addEventListener('change',async e=>{
+  const f=e.target.files[0];if(!f||!pickTarget)return;const {img,i}=pickTarget;pickTarget=null;
+  status('saving','جارٍ رفع الصورة…');
+  try{
+    let src;
+    if(assets){const r=await assets.upload(f,{type:f.type||'image/jpeg'});src='/_blob/'+r.id}
+    else src=await shrink(f,1600,.82);
+    img.src=src;saveSlide[i]();toast('تم استبدال الصورة');
+  }catch(err){console.warn(err);status('error','تعذّر رفع الصورة');toast(err.code==='too_large'?'الصورة أكبر من 20 ميجابايت':'تعذّر رفع الصورة، جرّب صورة أخرى')}
+});
+function shrink(file,max,q){return new Promise((res,rej)=>{const u=URL.createObjectURL(file);const im=new Image();im.onload=()=>{const k=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',q))};im.onerror=rej;im.src=u})}
+
+/* ================= BUSINESS CARD ================= */
+const CARD0={name:'اسم الموظف',nameEn:'Employee Name',title:'المسمى الوظيفي',phone:'+966 54 499 5399',email:'info@story.sa',web:'story.sa',city:'الرياض، المملكة العربية السعودية',tag:'الشريك الموثوق للتسويق العقاري',front:'img/cover-glass-3d-c.jpg',bleed:false};
+let card=clone(CARD0);
+const grain='<div style="position:absolute;inset:0;background-image:url(img/grain.png);background-size:400px;opacity:.07;mix-blend-mode:overlay"></div>';
+const BL=36;
+function cardFront(c){
+  const b=c.bleed?BL:0;
+  const bg=c.front==='orbs'
+    ?`<div style="position:absolute;left:-160px;top:380px;width:620px;height:360px;border-radius:50%;background:#B8602A;filter:blur(90px)"></div><div style="position:absolute;left:260px;top:450px;width:480px;height:260px;border-radius:50%;background:#E0AA60;filter:blur(90px);opacity:.9"></div><div style="position:absolute;left:700px;top:420px;width:520px;height:300px;border-radius:50%;background:#2B3A78;filter:blur(100px)"></div>`
+    :`<img src="${esc(c.front)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:18% 50%">`;
+  return `<div class="pg bc" style="width:${1020+2*b}px;height:${660+2*b}px">${bg}${grain}<div style="position:absolute;inset:${b}px">
+  <div style="position:absolute;right:84px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;gap:26px;width:440px">
+    <img src="img/logo-white.png" alt="" style="width:330px;align-self:flex-start">
+    <div style="font-size:30px;font-weight:700;line-height:1.25;color:#F4F0EA;text-wrap:balance">${esc(c.tag)}</div>
+  </div>
+  <div style="position:absolute;bottom:52px;right:84px;left:84px;display:flex;justify-content:space-between;font-size:22px;color:#BDB6AC"><span style="font-weight:300">الاتصال · التسويق · الإبداع</span><span dir="ltr">${esc(c.web)}</span></div>
+  </div></div>`;
+}
+function cardBack(c){
+  const row=(l,v,ltr)=>v?`<div style="display:flex;justify-content:space-between;align-items:baseline;padding:14px 0;border-top:1px solid rgba(255,255,255,.22)"><span style="color:#E0AA60;font-size:22px">${l}</span><span ${ltr?'dir="ltr"':''} style="font-size:27px;font-weight:500">${esc(v)}</span></div>`:'';
+  const b=c.bleed?BL:0;
+  return `<div class="pg bc" style="width:${1020+2*b}px;height:${660+2*b}px">
+  <div style="position:absolute;left:-220px;top:470px;width:640px;height:340px;border-radius:50%;background:#B8602A;filter:blur(100px);opacity:.9"></div><div style="position:absolute;left:300px;top:540px;width:460px;height:240px;border-radius:50%;background:#E0AA60;filter:blur(100px);opacity:.75"></div><div style="position:absolute;left:760px;top:500px;width:520px;height:300px;border-radius:50%;background:#2B3A78;filter:blur(110px);opacity:.95"></div>${grain}<div style="position:absolute;inset:${b}px">
+  <div style="position:absolute;top:44px;right:84px;left:84px;display:flex;justify-content:space-between;font-size:18px;color:#fff"><span style="font-weight:300">ستوري العقارية</span><img src="img/mark-white.png" alt="" style="height:36px"></div>
+  <div style="position:absolute;right:84px;left:84px;top:130px;display:flex;flex-direction:column">
+    <div style="font-size:60px;font-weight:900;line-height:1.05">${esc(c.name)}</div>
+    ${c.nameEn?`<div dir="ltr" style="font-size:22px;font-weight:300;color:#D8D0C6;margin-top:10px;text-align:right">${esc(c.nameEn)}</div>`:''}
+    <div style="font-size:26px;color:#E0AA60;margin-top:10px;margin-bottom:34px">${esc(c.title)}</div>
+    ${row('الجوال',c.phone,1)}${row('البريد',c.email,1)}${row('الموقع',c.web,1)}${row('المدينة',c.city,0)}
+  </div></div></div>`;
+}
+function renderCard(){
+  const b=card.bleed?BL:0,W=1020+2*b,H=660+2*b;
+  const trim=b?`<div style="position:absolute;inset:${b}px;border:2px dashed rgba(224,170,96,.8);pointer-events:none"></div>`:'';
+  const wrap=(html,label)=>`<div class="frame"><div class="frame-h"><span class="t">${label}</span><span class="chip">85 × 55 مم${b?' + قص 3 مم':''}</span></div>${stageHTML(W,H,html+trim)}</div>`;
+  $('#card-out').innerHTML=wrap(cardFront(card),'الوجه الأمامي')+wrap(cardBack(card),'الوجه الخلفي');
+  watch($('#card-out'));
+}
+function bindCardForm(){
+  $$('#v-card [data-k]').forEach(el=>{
+    if(el.type==='checkbox')el.checked=!!card[el.dataset.k];else el.value=card[el.dataset.k]??'';
+  });
+}
+const saveCard=debounce(()=>save('state/card',card),700);
+$('#v-card').addEventListener('input',e=>{const el=e.target.closest('[data-k]');if(!el)return;card[el.dataset.k]=el.type==='checkbox'?el.checked:el.value;renderCard();saveCard()});
+
+/* ================= GENERIC FORM BUILDER ================= */
+// spec: [{type:'group',title,items:[...]}, {k,label,type:'text'|'textarea'|'number'|'date'|'check'|'rows',ltr,fields}]
+function formHTML(spec,prefix){
+  const f=(it)=>{
+    const id=prefix+'-'+it.k;
+    if(it.type==='check')return `<label class="check"><input type="checkbox" id="${id}" data-k="${it.k}"> ${it.label}</label>`;
+    if(it.type==='rows')return `<div class="field"><label>${it.label}</label><div class="rows" data-rows="${it.k}"></div><button class="btn sm" type="button" data-add="${it.k}">+ ${it.add||'إضافة'}</button></div>`;
+    if(it.type==='textarea')return `<div class="field"><label for="${id}">${it.label}</label><textarea id="${id}" data-k="${it.k}" rows="${it.rows||4}"></textarea>${it.hint?`<span class="hint" style="font-size:11.5px">${it.hint}</span>`:''}</div>`;
+    return `<div class="field"><label for="${id}">${it.label}</label><input id="${id}" data-k="${it.k}" type="${it.type||'text'}" ${it.ltr?'dir="ltr"':''} ${it.step?`step="${it.step}"`:''}></div>`;
+  };
+  return spec.map(g=>`<div class="card-ui"><h3>${g.title}</h3>${g.note?`<p class="hint">${g.note}</p>`:''}${g.items.map(it=>Array.isArray(it)?`<div class="row2">${it.map(f).join('')}</div>`:f(it)).join('')}</div>`).join('');
+}
+function rowsHTML(list,fields){
+  return list.map((r,ri)=>`<div class="rowbox" data-ri="${ri}"><button class="rm" type="button" data-rm="${ri}" aria-label="حذف">×</button><span class="mini">${ri+1}</span>
+    ${fields.map(fl=>Array.isArray(fl)?`<div class="grid" style="grid-template-columns:repeat(${fl.length},1fr)">${fl.map(x=>cell(x,r)).join('')}</div>`:cell(fl,r)).join('')}</div>`).join('');
+  function cell(x,r){return `<label class="rl"><span>${x.ph||''}</span>`+(x.area?`<textarea data-f="${x.k}">${esc(r[x.k])}</textarea>`:`<input data-f="${x.k}" type="${x.num?'number':'text'}" ${x.num?'dir="ltr" step="any"':''} value="${esc(r[x.k])}">`)+`</label>`}
+}
+function bindForm(root,state,spec,onChange){
+  const all=spec.flatMap(g=>g.items.flat());
+  const rowsSpec=Object.fromEntries(all.filter(x=>x.type==='rows').map(x=>[x.k,x]));
+  const paintRows=k=>{root.querySelector(`[data-rows="${k}"]`).innerHTML=rowsHTML(state[k],rowsSpec[k].fields)};
+  root.querySelectorAll('[data-k]').forEach(el=>{const v=state[el.dataset.k];if(el.type==='checkbox')el.checked=!!v;else el.value=v??''});
+  Object.keys(rowsSpec).forEach(paintRows);
+  if(root._bound)return;root._bound=true;
+  root.addEventListener('input',e=>{
+    const el=e.target;
+    if(el.dataset.k){state[el.dataset.k]=el.type==='checkbox'?el.checked:(el.type==='number'?(+el.value||0):el.value);onChange();return}
+    if(el.dataset.f){const box=el.closest('.rowbox');const k=box.parentElement.dataset.rows;const fl=rowsSpec[k].fields.flat().find(x=>x.k===el.dataset.f);state[k][+box.dataset.ri][el.dataset.f]=fl.num?(+el.value||0):el.value;onChange()}
+  });
+  root.addEventListener('change',e=>{if(e.target.type==='checkbox'&&e.target.dataset.k){state[e.target.dataset.k]=e.target.checked;onChange()}});
+  root.addEventListener('click',e=>{
+    const a=e.target.closest('[data-add]');if(a){const k=a.dataset.add;state[k].push(Object.fromEntries(rowsSpec[k].fields.flat().map(x=>[x.k,x.num?(x.def??1):''])));paintRows(k);onChange();return}
+    const r=e.target.closest('[data-rm]');if(r){const k=r.closest('[data-rows]').dataset.rows;state[k].splice(+r.dataset.rm,1);paintRows(k);onChange()}
+  });
+}
+
+/* ================= SHARED DOC PIECES ================= */
+function a4(inner,{title,page,total,dark,orb=true}={}){
+  const o=orb&&!dark?`<div class="orb" style="left:-160px;top:-180px;width:460px;height:360px;background:#E0AA60;filter:blur(110px);opacity:.38"></div><div class="orb" style="left:120px;top:-200px;width:300px;height:260px;background:#B8602A;filter:blur(110px);opacity:.22"></div>`:'';
+  return `<div class="pg a4${dark?' dark':''}">${o}
+    ${title?`<div class="ph"><span class="t">${esc(title)}</span><span class="num">${page?String(page).padStart(2,'0')+' / '+String(total).padStart(2,'0'):''}</span></div>`:''}
+    ${inner}
+  </div>`;
+}
+function footer(co){return `<div class="pf"><span>${esc(co.company)} · س.ت <span class="num">${esc(co.cr)}</span> · الرقم الضريبي <span class="num">${esc(co.vatNo)}</span></span><span class="num">${esc(co.email)} · ${esc(co.phone)}</span><img src="img/mark-navy.png" alt=""></div>`}
+function totals(items,discount,vat){
+  const sub=items.reduce((a,r)=>a+(+r.q||0)*(+r.p||0),0);const disc=sub*(+discount||0)/100;const net=sub-disc;const tax=vat?net*.15:0;return{sub,disc,net,tax,grand:net+tax};
+}
+function itemsTable(items){
+  return `<table><thead><tr><th class="c-n">#</th><th>البند</th><th class="c-q">الكمية</th><th class="c-p">سعر الوحدة</th><th class="c-t">الإجمالي</th></tr></thead><tbody>
+  ${items.map((r,i)=>`<tr><td class="c-n num">${String(i+1).padStart(2,'0')}</td><td><b style="font-weight:700">${esc(r.d)}</b>${r.s?`<span class="s">${nl(r.s)}</span>`:''}</td><td class="c-q num">${money(r.q)}</td><td class="c-p num">${money(r.p)}</td><td class="c-t num">${money((+r.q||0)*(+r.p||0))}</td></tr>`).join('')}
+  </tbody></table>`;
+}
+function totalsBox(t,discount,vat,cur){
+  return `<div class="tot">
+    <div><span>المجموع</span><span class="num">${money(t.sub)} ${cur}</span></div>
+    ${+discount?`<div><span>الخصم (${money(discount)}%)</span><span class="num">− ${money(t.disc)} ${cur}</span></div>`:''}
+    ${vat?`<div><span>ضريبة القيمة المضافة 15%</span><span class="num">${money(t.tax)} ${cur}</span></div>`:''}
+    <div class="grand"><span>الإجمالي ${vat?'شامل الضريبة':''}</span><b class="num">${money(t.grand)} <small style="font-size:12px;font-weight:500">${cur}</small></b></div>
+  </div>`;
+}
+const addDays=(d,n)=>{try{const x=new Date(d);x.setDate(x.getDate()+(+n||0));return x.toISOString().slice(0,10)}catch(e){return ''}};
+const COMPANY0={company:'ستوري العقارية',cr:'0000000000',vatNo:'300000000000003',email:'info@story.sa',phone:'+966 54 499 5399',web:'story.sa',bank:'اسم البنك',iban:'SA00 0000 0000 0000 0000 0000',holder:'مؤسسة ستوري للتسويق'};
+
+/* ================= QUOTE ================= */
+const QUOTE0={...COMPANY0,no:'Q-2026-001',date:new Date().toISOString().slice(0,10),valid:15,client:'شركة المثال للتطوير العقاري',contact:'أ. محمد العبدالله',subject:'حملة تسويقية متكاملة لإطلاق مشروع سكني',cur:'ر.س',discount:0,vat:true,
+  items:[{d:'استراتيجية الاتصال والتسويق',s:'تحليل السوق والمنافسين، الرسائل الأساسية، خطة القنوات والميزانية',q:1,p:18000},{d:'فيديو تعريفي للمشروع',s:'سيناريو، تصوير ميداني، مونتاج وموشن جرافيك 2D',q:1,p:35000},{d:'الهوية البصرية للمشروع',s:'شعار المشروع، الألوان والخطوط، دليل الاستخدام',q:1,p:22000},{d:'إدارة الحملات الإعلانية المدفوعة',s:'إعداد وإدارة شهرية مع تقرير أداء',q:3,p:9500},{d:'إدارة حسابات التواصل الاجتماعي',s:'خطة محتوى شهرية، 20 تصميمًا، 4 فيديوهات قصيرة',q:3,p:12000}],
+  payment:'50% دفعة مقدمة عند التعميد\n50% عند التسليم النهائي',
+  terms:'الأسعار بالريال السعودي.\nيبدأ التنفيذ بعد استلام الدفعة الأولى واعتماد العرض.\nيشمل العرض جولتي تعديل لكل مخرج.\nلا يشمل العرض ميزانية الإعلانات المدفوعة لدى المنصات.\nتنتقل حقوق الاستخدام للعميل بعد السداد الكامل.'};
+let quote=clone(QUOTE0);
+const Q_SPEC=[
+  {title:'بيانات العرض',note:'القيم الحالية أمثلة، استبدلها ببيانات عميلك.',items:[['no','date'].map(k=>({k,label:k==='no'?'رقم العرض':'التاريخ',type:k==='date'?'date':'text',ltr:1})),{k:'valid',label:'صلاحية العرض (أيام)',type:'number'},{k:'client',label:'اسم العميل / الجهة'},{k:'contact',label:'عناية'},{k:'subject',label:'موضوع العرض'}]},
+  {title:'البنود',items:[{k:'items',label:'بنود العرض',type:'rows',add:'بند جديد',fields:[{k:'d',ph:'اسم البند'},{k:'s',ph:'وصف مختصر',area:1},[{k:'q',ph:'الكمية',num:1,def:1},{k:'p',ph:'سعر الوحدة',num:1,def:0}]]},[{k:'discount',label:'خصم %',type:'number'},{k:'cur',label:'العملة'}],{k:'vat',label:'إضافة ضريبة القيمة المضافة 15%',type:'check'}]},
+  {title:'الشروط',items:[{k:'payment',label:'شروط الدفع',type:'textarea',rows:3,hint:'كل سطر بند مستقل.'},{k:'terms',label:'الشروط والأحكام',type:'textarea',rows:6}]},
+  {title:'بيانات المنشأة والبنك',items:[{k:'company',label:'اسم المنشأة'},[{k:'cr',label:'السجل التجاري',ltr:1},{k:'vatNo',label:'الرقم الضريبي',ltr:1}],[{k:'email',label:'البريد',ltr:1},{k:'phone',label:'الهاتف',ltr:1}],{k:'bank',label:'البنك'},{k:'holder',label:'اسم الحساب'},{k:'iban',label:'الآيبان',ltr:1}]}
+];
+function renderQuote(){
+  const q=quote,t=totals(q.items,q.discount,q.vat);
+  const html=a4(`<div class="body" style="gap:17px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start"><img src="img/story-logo-dark.svg" alt="ستوري العقارية" style="height:62px"><div style="text-align:left;display:flex;flex-direction:column;gap:2px"><span style="font-size:10px;color:#8A837A">رقم العرض</span><b class="num" style="font-size:15px">${esc(q.no)}</b></div></div>
+    <div style="display:flex;flex-direction:column;gap:8px"><span class="eyebrow">عرض سعر</span><h1>${esc(q.subject)}</h1></div>
+    <div class="meta"><div><span>مقدَّم إلى</span><b>${esc(q.client)}</b></div><div><span>عناية</span><b>${esc(q.contact)}</b></div><div><span>تاريخ العرض</span><b class="num" style="text-align:right">${esc(q.date)}</b></div><div><span>صالح حتى</span><b class="num" style="text-align:right">${addDays(q.date,q.valid)}</b></div></div>
+    ${itemsTable(q.items)}
+    ${totalsBox(t,q.discount,q.vat,esc(q.cur))}
+    <div class="cols" style="margin-top:auto">
+      <div class="blk"><h4>شروط الدفع</h4><ul>${lines(q.payment).map(x=>`<li>${esc(x)}</li>`).join('')}</ul><h4 style="margin-top:14px">الحساب البنكي</h4><div class="kv"><span>البنك</span><b style="font-weight:500">${esc(q.bank)}</b><span>اسم الحساب</span><b style="font-weight:500">${esc(q.holder)}</b><span>الآيبان</span><b class="num" style="font-weight:500;text-align:right">${esc(q.iban)}</b></div></div>
+      <div class="blk"><h4>الشروط والأحكام</h4><ol>${lines(q.terms).map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>
+    </div>
+    <div class="sign"><div>اعتماد ${esc(q.company)} — الختم والتوقيع</div><div>اعتماد العميل — الاسم والتوقيع</div></div>
+  </div>${footer(q)}`,{title:'عرض سعر'});
+  $('#quote-out').innerHTML=`<div class="frame"><div class="frame-h"><span class="t">عرض سعر</span><span class="chip">A4</span><span class="chip bad" id="q-over" hidden>المحتوى تجاوز الصفحة، قلّل البنود أو الشروط</span></div>${stageHTML(794,1123,html,'paper')}</div>`;
+  watch($('#quote-out'));
+  const b=$('#quote-out .body');$('#q-over').hidden=b.scrollHeight<=b.clientHeight+2;
+}
+const saveQuote=debounce(()=>save('state/quote',quote),700);
+const rQuote=debounce(renderQuote,120);
+
+/* ================= PROPOSAL ================= */
+const PROP0={...COMPANY0,ref:'TP-2026-001',date:new Date().toISOString().slice(0,10),valid:30,client:'شركة المثال للتطوير العقاري',project:'الحملة التسويقية لإطلاق مشروع «المثال ريزيدنس»',cur:'ر.س',discount:0,vat:true,
+  intro:'يسعدنا في ستوري العقارية تقديم عرضنا الفني والمالي لتنفيذ الحملة التسويقية لإطلاق المشروع. نقدّم حلولًا تسويقية متكاملة ترتكز على فهم عميق للسوق العقاري المحلي وتوجهات رؤية المملكة، ونرافق مشاريع عملائنا من الفكرة حتى النتيجة.',
+  understanding:'يستهدف المشروع شريحة الأسر الشابة الباحثة عن سكن متكامل الخدمات. التحدي الرئيس هو بناء وعي سريع بالمشروع قبل مرحلة البيع على الخارطة، وتحويل الاهتمام إلى زيارات لمركز المبيعات وحجوزات فعلية خلال الأشهر الثلاثة الأولى.',
+  goals:'بناء وعي بالمشروع لدى الشريحة المستهدفة\nتوليد عملاء محتملين مؤهلين بتكلفة مدروسة\nرفع الزيارات لمركز المبيعات\nتقديم تقارير أداء قابلة للقياس',
+  stats:[{v:'9.8M+',l:'وصول إجمالي لحملاتنا'},{v:'64+',l:'حملة ومحتوى'},{v:'520K+',l:'مشاهدة'}],
+  scope:[{t:'الاستراتيجية',d:'دراسة السوق والمنافسين، تحديد الشرائح والرسائل، خطة القنوات والميزانية.'},{t:'الهوية البصرية للمشروع',d:'شعار المشروع، نظام الألوان والخطوط، دليل الاستخدام والتطبيقات.'},{t:'الإنتاج المرئي',d:'فيديو تعريفي، تصوير المواقع، رندرات ثلاثية الأبعاد، موشن جرافيك.'},{t:'المحتوى الرقمي',d:'خطة محتوى شهرية، تصاميم وفيديوهات قصيرة لمنصات التواصل.'},{t:'الحملات المدفوعة',d:'إعداد الحملات وإدارتها وتحسينها على المنصات المناسبة.'},{t:'القياس والتقارير',d:'لوحة مؤشرات وتقرير أداء شهري مع توصيات التحسين.'}],
+  phases:[{n:'الاكتشاف والاستراتيجية',w:2,d:'ورشة عمل مع العميل، تحليل السوق، اعتماد الاستراتيجية.'},{n:'الهوية والمفهوم الإبداعي',w:3,d:'تطوير الهوية والمفهوم الإبداعي للحملة واعتماده.'},{n:'الإنتاج',w:4,d:'تصوير وإنتاج الفيديو والمواد المرئية والرقمية.'},{n:'الإطلاق والتشغيل',w:12,d:'إطلاق الحملة وإدارة القنوات والتحسين المستمر.'},{n:'التقييم',w:1,d:'تقرير ختامي بالنتائج والتوصيات.'}],
+  team:[{n:'عبدالله الأنصاري',r:'المدير التنفيذي',d:'الإشراف العام على المشروع والعلاقة مع العميل.',img:'img/team-1.webp'},{n:'محمد الحاج',r:'مدير الاستراتيجية والتسويق',d:'بناء الاستراتيجية وإدارة الحملات وقياس الأداء.',img:'img/team-2.webp'},{n:'الحسن المجتبى',r:'المدير الإبداعي',d:'المفهوم الإبداعي والهوية والإشراف على التصميم.',img:'img/team-3.webp'},{n:'أدريس الأنصاري',r:'مدير الإنتاج',d:'إدارة التصوير والإنتاج المرئي والموشن.',img:'img/team-4.webp'}],
+  items:clone(QUOTE0.items),
+  pays:[{n:'الدفعة الأولى',p:40,w:'عند توقيع العقد'},{n:'الدفعة الثانية',p:30,w:'عند اعتماد الهوية والمفهوم الإبداعي'},{n:'الدفعة الثالثة',p:30,w:'عند التسليم النهائي'}],
+  terms:QUOTE0.terms};
+let prop=clone(PROP0);
+const P_SPEC=[
+  {title:'بيانات العرض',note:'القيم الحالية أمثلة، استبدلها ببيانات مشروعك.',items:[[{k:'ref',label:'رقم المرجع',ltr:1},{k:'date',label:'التاريخ',type:'date',ltr:1}],{k:'valid',label:'صلاحية العرض (أيام)',type:'number'},{k:'client',label:'العميل'},{k:'project',label:'اسم المشروع / الحملة'}]},
+  {title:'العرض الفني',items:[{k:'intro',label:'المقدمة',type:'textarea',rows:4},{k:'understanding',label:'فهمنا للمشروع',type:'textarea',rows:4},{k:'goals',label:'الأهداف',type:'textarea',rows:4,hint:'كل سطر هدف.'},{k:'stats',label:'أرقام ستوري',type:'rows',add:'رقم',fields:[[{k:'v',ph:'الرقم'},{k:'l',ph:'الوصف'}]]}]},
+  {title:'نطاق العمل',items:[{k:'scope',label:'المخرجات',type:'rows',add:'مخرج',fields:[{k:'t',ph:'العنوان'},{k:'d',ph:'الوصف',area:1}]}]},
+  {title:'المنهجية والجدول الزمني',items:[{k:'phases',label:'المراحل (المدة بالأسابيع)',type:'rows',add:'مرحلة',fields:[[{k:'n',ph:'اسم المرحلة'},{k:'w',ph:'أسابيع',num:1,def:1}],{k:'d',ph:'الوصف',area:1}]}]},
+  {title:'فريق العمل',items:[{k:'team',label:'الأعضاء',type:'rows',add:'عضو',fields:[[{k:'n',ph:'الاسم'},{k:'r',ph:'الدور'}],{k:'d',ph:'المسؤولية في المشروع',area:1}]}]},
+  {title:'العرض المالي',items:[{k:'items',label:'البنود',type:'rows',add:'بند جديد',fields:[{k:'d',ph:'اسم البند'},{k:'s',ph:'وصف مختصر',area:1},[{k:'q',ph:'الكمية',num:1,def:1},{k:'p',ph:'سعر الوحدة',num:1,def:0}]]},[{k:'discount',label:'خصم %',type:'number'},{k:'cur',label:'العملة'}],{k:'vat',label:'إضافة ضريبة القيمة المضافة 15%',type:'check'},{k:'pays',label:'جدول الدفعات',type:'rows',add:'دفعة',fields:[[{k:'n',ph:'الدفعة'},{k:'p',ph:'النسبة %',num:1,def:0}],{k:'w',ph:'موعد الاستحقاق'}]}]},
+  {title:'الشروط وبيانات المنشأة',items:[{k:'terms',label:'الشروط والأحكام',type:'textarea',rows:6},{k:'company',label:'اسم المنشأة'},[{k:'cr',label:'السجل التجاري',ltr:1},{k:'vatNo',label:'الرقم الضريبي',ltr:1}],[{k:'email',label:'البريد',ltr:1},{k:'phone',label:'الهاتف',ltr:1}],{k:'bank',label:'البنك'},{k:'holder',label:'اسم الحساب'},{k:'iban',label:'الآيبان',ltr:1}]}
+];
+function renderProposal(){
+  const p=prop,T=7,t=totals(p.items,p.discount,p.vat),cur=esc(p.cur);
+  const pages=[];
+  // 1 cover
+  pages.push(a4(`<img src="img/cover-glass-3d-c.jpg" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:22% 50%;opacity:.95">
+    <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(5,5,6,.92) 0%,rgba(5,5,6,.2) 55%,rgba(5,5,6,.1) 100%)"></div>
+    <div style="position:absolute;inset:0;background-image:url(img/grain.png);background-size:400px;opacity:.06;mix-blend-mode:overlay"></div>
+    <div style="position:absolute;top:44px;right:48px;left:48px;display:flex;justify-content:space-between;align-items:center;font-size:11px"><span style="font-weight:300">العرض الفني والمالي</span><span class="num" style="opacity:.7">${esc(p.ref)}</span></div>
+    <img src="img/logo-white.png" alt="" style="position:absolute;top:120px;right:48px;width:190px">
+    <div style="position:absolute;right:48px;left:48px;bottom:86px;display:flex;flex-direction:column;gap:18px">
+      <span style="font-size:13px;font-weight:700;color:#E0AA60">العرض الفني والمالي</span>
+      <div style="font-size:44px;font-weight:900;line-height:1.1;text-wrap:balance">${esc(p.project)}</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(255,255,255,.3);padding-top:12px;font-size:12px;gap:12px">
+        <div><span style="color:#BDB6AC;font-size:10px;display:block">مقدَّم إلى</span>${esc(p.client)}</div>
+        <div><span style="color:#BDB6AC;font-size:10px;display:block">التاريخ</span><span class="num">${esc(p.date)}</span></div>
+        <div><span style="color:#BDB6AC;font-size:10px;display:block">صالح حتى</span><span class="num">${addDays(p.date,p.valid)}</span></div>
+      </div>
+    </div>`,{dark:true}));
+  // 2 intro
+  pages.push(a4(`<div class="body" style="gap:26px;padding-top:30px">
+    <span class="eyebrow">المقدمة</span><h2>شريككم في رواية قصة المشروع</h2>
+    <p class="lead">${nl(p.intro)}</p>
+    <div class="stats">${p.stats.map(s=>`<div><b>${esc(s.v)}</b><span>${esc(s.l)}</span></div>`).join('')}</div>
+    <div class="rule"></div>
+    <span class="eyebrow">فهمنا للمشروع</span>
+    <p class="lead">${nl(p.understanding)}</p>
+    <span class="eyebrow">الأهداف</span>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px 22px">${lines(p.goals).map((g,i)=>`<div style="display:flex;gap:10px;align-items:baseline;border-top:1px solid rgba(20,18,20,.15);padding-top:8px;font-size:14px"><b class="num" style="color:#B8602A;font-weight:900">${String(i+1).padStart(2,'0')}</b><span>${esc(g)}</span></div>`).join('')}</div>
+  </div>${footer(p)}`,{title:'المقدمة',page:2,total:T}));
+  // 3 scope
+  pages.push(a4(`<div class="body" style="gap:22px;padding-top:30px">
+    <span class="eyebrow">العرض الفني</span><h2>نطاق العمل والمخرجات</h2>
+    <p class="lead">يغطي العرض المخرجات التالية، ويمكن تعديل النطاق بالاتفاق مع العميل قبل التعميد.</p>
+    <div class="scope">${p.scope.map((s,i)=>`<div><span class="k num">${String(i+1).padStart(2,'0')}</span><b>${esc(s.t)}</b><p>${nl(s.d)}</p></div>`).join('')}</div>
+  </div>${footer(p)}`,{title:'نطاق العمل',page:3,total:T}));
+  // 4 methodology + gantt
+  const W=p.phases.reduce((a,x)=>a+(+x.w||0),0)||1;let acc=0;
+  const cols=['#B8602A','#E0AA60','#2B3A78','#8A6446','#4B5CA8','#C9A46E'];
+  const step=W>16?4:W>8?2:1;const ticks=[];for(let w=0;w<=W;w+=step)ticks.push(w);
+  pages.push(a4(`<div class="body" style="gap:20px;padding-top:30px">
+    <span class="eyebrow">العرض الفني</span><h2>المنهجية والجدول الزمني</h2>
+    <p class="lead">مدة التنفيذ الإجمالية <b class="num">${W}</b> أسبوعًا، موزعة على ${p.phases.length} مراحل متتابعة.</p>
+    <div class="gantt">
+      <div class="axis"><span>المرحلة</span><div class="ticks">${ticks.map(w=>`<span class="num" style="right:${w/W*100}%">${w===0?'':'أ'+w}</span>`).join('')}</div></div>
+      ${p.phases.map((ph,i)=>{const s=acc;acc+=(+ph.w||0);return `<div class="gr"><span style="font-weight:500">${esc(ph.n)}</span><div class="track">${ticks.map(w=>`<span class="wk" style="right:${w/W*100}%"></span>`).join('')}<i style="right:${s/W*100}%;width:${(+ph.w||0)/W*100}%;background:${cols[i%cols.length]}"></i></div></div>`}).join('')}
+    </div>
+    <div>${p.phases.map((ph,i)=>`<div class="phase"><span class="i num">${String(i+1).padStart(2,'0')}</span><div><b>${esc(ph.n)}</b><p>${nl(ph.d)}</p></div><span class="d"><span class="num">${+ph.w||0}</span> أسابيع</span></div>`).join('')}</div>
+  </div>${footer(p)}`,{title:'المنهجية',page:4,total:T}));
+  // 5 team
+  pages.push(a4(`<div class="body" style="gap:24px;padding-top:30px">
+    <span class="eyebrow">فريق العمل</span><h2>العقول خلف القصة</h2>
+    <p class="lead">فريق متخصص يرافق المشروع من الاستراتيجية حتى قياس النتائج.</p>
+    <div class="team">${p.team.map((m,i)=>`<div class="m"><div class="ph0" style="background:${cols[i%cols.length]}">${m.img?`<img src="${esc(m.img)}" alt="">`:''}</div><div><b>${esc(m.n)}</b><span>${esc(m.r)}</span><p>${nl(m.d)}</p></div></div>`).join('')}</div>
+  </div>${footer(p)}`,{title:'فريق العمل',page:5,total:T}));
+  // 6 financial
+  pages.push(a4(`<div class="body" style="gap:18px;padding-top:30px">
+    <span class="eyebrow">العرض المالي</span><h2>التكلفة وجدول الدفعات</h2>
+    ${itemsTable(p.items)}
+    ${totalsBox(t,p.discount,p.vat,cur)}
+    <div class="blk"><h4>جدول الدفعات</h4>
+    <table><thead><tr><th>الدفعة</th><th>الاستحقاق</th><th class="c-q">النسبة</th><th class="c-t">المبلغ</th></tr></thead><tbody>
+    ${p.pays.map(x=>`<tr><td><b style="font-weight:700">${esc(x.n)}</b></td><td>${esc(x.w)}</td><td class="c-q num">${money(x.p)}%</td><td class="c-t num">${money(t.grand*(+x.p||0)/100)} ${cur}</td></tr>`).join('')}
+    </tbody></table>${Math.round(p.pays.reduce((a,x)=>a+(+x.p||0),0))!==100?'<p style="font-size:10.5px;color:#D9735B;margin-top:6px">مجموع نسب الدفعات لا يساوي 100%</p>':''}</div>
+  </div>${footer(p)}`,{title:'العرض المالي',page:6,total:T}));
+  // 7 terms + approval
+  pages.push(a4(`<div class="body" style="gap:22px;padding-top:30px">
+    <span class="eyebrow">الشروط والاعتماد</span><h2>الشروط والأحكام</h2>
+    <div class="blk"><ol style="font-size:12px;line-height:1.95">${lines(p.terms).map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>
+    <div class="cols"><div class="blk"><h4>الحساب البنكي</h4><div class="kv"><span>البنك</span><b style="font-weight:500">${esc(p.bank)}</b><span>اسم الحساب</span><b style="font-weight:500">${esc(p.holder)}</b><span>الآيبان</span><b class="num" style="font-weight:500;text-align:right">${esc(p.iban)}</b></div></div>
+    <div class="blk"><h4>للتواصل</h4><div class="kv"><span>البريد</span><b class="num" style="font-weight:500;text-align:right">${esc(p.email)}</b><span>الهاتف</span><b class="num" style="font-weight:500;text-align:right">${esc(p.phone)}</b><span>الموقع</span><b class="num" style="font-weight:500;text-align:right">${esc(p.web)}</b></div></div></div>
+    <div style="margin-top:auto;background:#050506;color:#F4F0EA;border-radius:14px;padding:26px 28px;position:relative;overflow:hidden">
+      <div style="position:absolute;left:-60px;bottom:-120px;width:320px;height:200px;border-radius:50%;background:#B8602A;filter:blur(70px);opacity:.8"></div><div style="position:absolute;left:220px;bottom:-130px;width:300px;height:200px;border-radius:50%;background:#2B3A78;filter:blur(70px)"></div>
+      <div style="position:relative;display:flex;flex-direction:column;gap:18px"><b style="font-size:20px;font-weight:900">اعتماد العرض</b>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:34px;font-size:11px;color:#BDB6AC"><div style="border-top:1px solid rgba(255,255,255,.35);padding-top:8px;height:70px">عن ${esc(p.company)} — الختم والتوقيع</div><div style="border-top:1px solid rgba(255,255,255,.35);padding-top:8px;height:70px">عن ${esc(p.client)} — الاسم والتوقيع</div></div></div>
+    </div>
+  </div>${footer(p)}`,{title:'الشروط والاعتماد',page:7,total:T}));
+  const names=['الغلاف','المقدمة','نطاق العمل','المنهجية','فريق العمل','العرض المالي','الشروط والاعتماد'];
+  $('#prop-out').innerHTML=pages.map((h,i)=>`<div class="frame"><div class="frame-h"><span class="num">${String(i+1).padStart(2,'0')}</span><span class="t">${names[i]}</span><span class="chip bad over" hidden>المحتوى تجاوز الصفحة</span></div>${stageHTML(794,1123,h,'paper')}</div>`).join('');
+  watch($('#prop-out'));
+  $$('#prop-out .frame').forEach(f=>{const b=f.querySelector('.body');if(b)f.querySelector('.over').hidden=b.scrollHeight<=b.clientHeight+2});
+}
+const saveProp=debounce(()=>save('state/proposal',prop),700);
+const rProp=debounce(renderProposal,120);
+
+/* ================= TABS ================= */
+let view='profile';
+function show(v){view=v;$$('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.v===v));$$('.view').forEach(x=>x.hidden=x.id!=='v-'+v);$$('#v-'+v+' .stage').forEach(fit);try{localStorage.setItem(LS+'tab',v)}catch(e){}}
+$$('.tab').forEach(t=>t.addEventListener('click',()=>show(t.dataset.v)));
+
+/* ================= EXPORT ================= */
+let fontCSS=null;
+async function exportPDF(){
+  if(document.activeElement)document.activeElement.blur();
+  let nodes,opt;
+  if(view==='profile'){
+    nodes=SLIDES.map((_,i)=>i).filter(i=>!prof[i].hidden).map(i=>$('#sf-'+i+' section.pg'));
+    opt={w:1920,h:1080,pw:1440,ph:810,unit:'pt',ratio:+$('#pf-q').value,name:($('#pf-name').value||'Story Profile')+'.pdf',bg:'#050506'};
+  }else if(view==='card'){
+    nodes=$$('#card-out .pg');const b=card.bleed?3:0,bp=card.bleed?BL:0;
+    opt={w:1020+2*bp,h:660+2*bp,pw:85+2*b,ph:55+2*b,unit:'mm',ratio:2.5,name:'Story Business Card - '+(card.nameEn||card.name)+'.pdf',bg:'#050506'};
+  }else if(view==='quote'){
+    nodes=$$('#quote-out .pg');opt={w:794,h:1123,pw:210,ph:297,unit:'mm',ratio:2.5,name:'عرض سعر '+quote.no+'.pdf',bg:'#FBF8F3'};
+  }else{
+    nodes=$$('#prop-out .pg');opt={w:794,h:1123,pw:210,ph:297,unit:'mm',ratio:2.5,name:'العرض الفني والمالي '+prop.ref+'.pdf',bg:'#FBF8F3'};
+  }
+  if(!nodes.length){toast('لا توجد صفحات للتصدير');return}
+  if(!window.htmlToImage||!window.jspdf){toast('أداة التصدير لم تُحمّل، أعد تحميل الصفحة');return}
+  const ov=$('#ov');ov.hidden=false;$('#ov-p').style.width='0';$('#ov-t').textContent='جارٍ تجهيز ملف PDF…';
+  try{
+    await document.fonts.ready;
+    if(!fontCSS){$('#ov-s').textContent='تجهيز الخطوط…';fontCSS=await htmlToImage.getFontEmbedCSS(nodes[0])}
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:opt.pw>opt.ph?'landscape':'portrait',unit:opt.unit,format:[opt.pw,opt.ph],compress:true});
+    for(let i=0;i<nodes.length;i++){
+      $('#ov-s').textContent=`الصفحة ${i+1} من ${nodes.length}`;
+      const url=await htmlToImage.toJpeg(nodes[i],{quality:.92,pixelRatio:opt.ratio,fontEmbedCSS:fontCSS,width:opt.w,height:opt.h,style:{transform:'none'}});
+      if(i)pdf.addPage([opt.pw,opt.ph],opt.pw>opt.ph?'landscape':'portrait');
+      pdf.addImage(url,'JPEG',0,0,opt.pw,opt.ph,undefined,'FAST');
+      $('#ov-p').style.width=((i+1)/nodes.length*100)+'%';
+    }
+    $('#ov-s').textContent='حفظ الملف…';
+    const blob=pdf.output('blob');
+    if(downloads){
+      try{await downloads.save({filename:opt.name,data:blob});toast('تم حفظ الملف')}
+      catch(e){if(e.code!=='declined')toast(e.code==='too_large'?'الملف كبير، اختر جودة أقل':'تعذّر حفظ الملف')}
+    }else{
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=opt.name;document.body.appendChild(a);a.click();a.remove();
+    }
+  }catch(e){console.error(e);toast('تعذّر التصدير: '+(e.message||e))}
+  finally{ov.hidden=true}
+}
+$('#export-btn').addEventListener('click',exportPDF);
+window.__story={exportPDF,show,get state(){return{prof,card,quote,prop}}};
+
+/* ================= BOOT ================= */
+buildProfile();
+bindCardForm();renderCard();
+$('#q-form').innerHTML=formHTML(Q_SPEC,'q');bindForm($('#q-form'),quote,Q_SPEC,()=>{rQuote();saveQuote()});renderQuote();
+$('#p-form').innerHTML=formHTML(P_SPEC,'p');bindForm($('#p-form'),prop,P_SPEC,()=>{rProp();saveProp()});renderProposal();
+try{const t=localStorage.getItem(LS+'tab');if(t)show(t)}catch(e){}
+if(location.hash&&/^#(profile|card|quote|proposal)$/.test(location.hash))show(location.hash.slice(1));
+
+async function hydrate(){
+  const [pd,cd,qd,prd]=await Promise.all([
+    Promise.all(SLIDES.map(s=>load('profile/s'+s.num))),load('state/card'),load('state/quote'),load('state/proposal')]);
+  pd.forEach((d,i)=>{if(d){prof[i].html=d.html||null;prof[i].hidden=!!d.hidden;renderSlide(i)}});
+  if(cd){card={...CARD0,...cd};bindCardForm();renderCard()}
+  if(qd){Object.assign(quote,qd);$('#q-form').innerHTML=formHTML(Q_SPEC,'q');bindForm($('#q-form'),quote,Q_SPEC,()=>{rQuote();saveQuote()});renderQuote()}
+  if(prd){Object.assign(prop,prd);$('#p-form').innerHTML=formHTML(P_SPEC,'p');bindForm($('#p-form'),prop,P_SPEC,()=>{rProp();saveProp()});renderProposal()}
+}
+(async()=>{
+  if(window.claude&&claude.use){
+    [db,assets,downloads]=await Promise.all([claude.use('db'),claude.use('assets'),claude.use('downloads')]);
+  }
+  mode=db?'db':'local';
+  await hydrate();
+  status(db?'saved':'local',db?'كل التعديلات محفوظة':'محفوظ في هذا المتصفح فقط');
+})();
+document.fonts.ready.then(()=>{renderQuote();renderProposal()});
+})();
+</script>
+
+</body></html>
